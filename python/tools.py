@@ -63,7 +63,7 @@ def get_gradient(cutout, mapparams = None, apply_wiener_filter = True, cl_signal
         cutout = cutout[ey1:ey2, ex1:ex2]
         cutout-=np.mean(cutout)
 
-    #get x and y gradients of the cutout
+    #get y and x gradients of the cutout
     cutout_grad = np.asarray( np.gradient(cutout) )
 
     #gradient magnitude
