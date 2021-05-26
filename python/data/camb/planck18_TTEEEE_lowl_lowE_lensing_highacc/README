@@ -1,0 +1,3 @@
+The main file is planck2018_base_plikHM_TTTEEE_lowl_lowE_lensing.ini,
+which reads in the base param file planck_2018.ini, and updates a few
+parameters to higher accuracy settings.
