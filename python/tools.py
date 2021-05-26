@@ -26,8 +26,8 @@ def extract_cutout(mapparams, cutout_size_am):
 
     ny, nx, dx = mapparams
     cutout_size = int( cutout_size_am/dx )
-    ex1, ex2 = int(nx/2 - cutout_size_am), int(nx/2+cutout_size_am)
-    ey1, ey2 = int(ny/2 - cutout_size_am), int(ny/2+cutout_size_am)
+    ex1, ex2 = int( (nx - cutout_size)/2 ), int( (nx+cutout_size)/2 )
+    ey1, ey2 = int( (ny - cutout_size)/2 ), int( (ny+cutout_size)/2 )
 
     return [ey1, ey2, ex1, ex2]
 

@@ -7,11 +7,42 @@ from colossus.cosmology import cosmology
 from colossus.halo import concentration, mass_defs
 cosmology.setCosmology('planck15')
 
+from scipy import interpolate as intrp
+
 from pylab import *
 
 #################################################################################
 #################################################################################
 #################################################################################
+
+def get_deflection_angle_from_convergence(kappa, mapparams):
+
+    ny, nx, dx = mapparams
+    lx, ly = flatsky.get_lxly(mapparams)
+    ell = np.hypot(lx, ly)
+
+    dx_rad = np.radians(dx/60.)
+    phi_fft = -2. * dx_rad * dx_rad * np.fft.fft2(kappa)/(ell**2)
+    phi_fft[np.isnan(phi_fft)] = 0.
+    phi_fft[np.isinf(phi_fft)] = 0.
+
+    def_x    = np.fft.ifft2(-1j * phi_fft * lx) / ( dx_rad * dx_rad )
+    def_y    = np.fft.ifft2(-1j * phi_fft * ly) / ( dx_rad * dx_rad )
+
+
+    return def_x, def_y
+
+def perform_lensing(theta_x_grid_deg, theta_y_grid_deg, image, kappa, mapparams, poly_deg = 5):
+
+    ny, nx, dx = mapparams
+    theta_x_grid, theta_y_grid = np.radians(theta_x_grid_deg), np.radians(theta_y_grid_deg)
+    def_x, def_y = get_deflection_angle_from_convergence(kappa, mapparams)
+    mod_theta_x_grid = (theta_x_grid + def_x).flatten().real
+    mod_theta_y_grid = (theta_y_grid + def_y).flatten().real
+
+    image_lensed = intrp.RectBivariateSpline( theta_y_grid[:,0], theta_x_grid[0,:], image, kx = poly_deg, ky = poly_deg).ev(mod_theta_y_grid, mod_theta_x_grid).reshape([ny,nx])
+
+    return image_lensed
 
 def get_rv(cosmo, Mdelta, z, h, delta, rho_def):
 
