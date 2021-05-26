@@ -2,6 +2,8 @@ import numpy as np, os, flatsky
 import scipy as sc
 import scipy.ndimage as ndimage
 
+from pylab import *
+
 #################################################################################
 #################################################################################
 #################################################################################
@@ -14,6 +16,23 @@ def is_seq(o):
 
 #################################################################################
 
+def rotate_cutout(cutout, angle_in_deg):
+
+    return ndimage.interpolation.rotate(cutout, angle_in_deg, reshape = False, mode = 'reflect')
+
+#################################################################################
+
+def extract_cutout(mapparams, cutout_size_am):
+
+    ny, nx, dx = mapparams
+    cutout_size = int( cutout_size_am/dx )
+    ex1, ex2 = int(nx/2 - cutout_size_am), int(nx/2+cutout_size_am)
+    ey1, ey2 = int(ny/2 - cutout_size_am), int(ny/2+cutout_size_am)
+
+    return [ey1, ey2, ex1, ex2]
+
+#################################################################################
+
 def get_gradient(cutout, mapparams = None, apply_wiener_filter = True, cl_signal = None, cl_noise = None, lpf_gradient_filter = None, cutout_size_am_for_grad = 6.):
 
     """
@@ -21,7 +40,7 @@ def get_gradient(cutout, mapparams = None, apply_wiener_filter = True, cl_signal
     """
 
     #get Wiener filter
-    if apply_wiener_lpf_filter:
+    if apply_wiener_filter:
         assert mapparams is not None and cl_signal is not None and cl_noise is not None
         wiener_filter = flatsky.wiener_filter(mapparams, cl_signal, cl_noise)
     else:
@@ -30,7 +49,7 @@ def get_gradient(cutout, mapparams = None, apply_wiener_filter = True, cl_signal
     #get LPF for CMB gradient estimation
     if lpf_gradient_filter:
         assert mapparams is not None
-        lpf_gradient_filter = flatsky.get_lpf_hpf(mapparams, lpf_gradient_filter, filter_type = 1)
+        lpf_gradient_filter = flatsky.get_lpf_hpf(mapparams, lpf_gradient_filter, filter_type = 0)
     else:
         lpf_gradient_filter = np.ones( cutout.shape )
 
@@ -40,10 +59,7 @@ def get_gradient(cutout, mapparams = None, apply_wiener_filter = True, cl_signal
     #extract desired portion of the cutout for gradient estimation
     if cutout_size_am_for_grad is not None:
         assert mapparams is not None
-        ny, nx, dx = mapparams
-        cutout_size_for_grad = int( cutout_size_am_for_grad/dx )
-        ex1, ex2 = int(nx/2 - cutout_size_for_grad), int(nx/2+cutout_size_for_grad)
-        ey1, ey2 = int(ny/2 - cutout_size_for_grad), int(ny/2+cutout_size_for_grad)
+        ey1, ey2, ex1, ex2 = extract_cutout(mapparams, cutout_size_am_for_grad)
         cutout = cutout[ey1:ey2, ex1:ex2]
         cutout-=np.mean(cutout)
 
