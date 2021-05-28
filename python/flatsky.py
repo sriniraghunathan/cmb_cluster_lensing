@@ -99,6 +99,9 @@ def get_lpf_hpf(flatskymapparams, lmin_lmax, filter_type = 0):
         fft_filter[ell<lmin] = 0.
         fft_filter[ell>lmax] = 0
 
+    fft_filter[np.isnan(fft_filter)] = 0.
+    fft_filter[np.isinf(fft_filter)] = 0.
+
     return fft_filter
 ################################################################################################################
 
@@ -114,6 +117,10 @@ def wiener_filter(flatskymapparams, cl_signal, cl_noise, el = None):
     cl_noise2d = cl_to_cl2d(el, cl_noise, flatskymapparams)
 
     wiener_filter = cl_signal2d / (cl_signal2d + cl_noise2d)
+    badinds = np.where(cl_signal2d + cl_noise2d == 0.)
+    wiener_filter[badinds] = 0.
+    wiener_filter[np.isnan(wiener_filter)] = 0.
+    wiener_filter[np.isinf(wiener_filter)] = 0.
 
     return wiener_filter
 
