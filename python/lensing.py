@@ -73,11 +73,6 @@ def get_nfw_kappa_deflection_angle(cosmo, theta, Mdelta, z, h, delta, rho_def, p
     returns convergence and deflection angle vectors. Currently only supports NFW.
     """
 
-    delta = 200
-    rho_def = 'crit'
-    Mdelta = 2e14
-    z = 0.7
-
     Mdelta = Mdelta*u.Msun
     if (rho_def == 'crit'):
         rho_c_z = cosmo.critical_density(z)
@@ -92,7 +87,6 @@ def get_nfw_kappa_deflection_angle(cosmo, theta, Mdelta, z, h, delta, rho_def, p
     r_v = get_rv(cosmo, Mdelta, z, h, delta, rho_def)
 
     cdelta = concentration.concentration(Mdelta.value, '%s%s' %(delta, rho_def[0]), z)
-    cdelta = 3.122727724329823
     
     if profile_name == 'NFW':
 
