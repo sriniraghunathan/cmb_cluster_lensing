@@ -126,3 +126,76 @@ def get_nl(noiseval, el, beamval = None, use_beam_window = False, uk_to_K = Fals
     return nl
 
 ################################################################################################################
+################################################################################################################
+
+def perform_simple_jackknife_sampling(total, howmany_jk_samples):
+    each_split_should_contain = int(total * 1./howmany_jk_samples)
+    fullarr = np.arange(total)
+    inds_to_pick = np.arange(len(fullarr))
+    already_picked_inds = []
+    jk_samples = []
+    for n in range(howmany_jk_samples):
+        inds = np.random.choice(inds_to_pick, size = each_split_should_contain, replace = 0)
+        inds_to_delete = np.where (np.in1d(inds_to_pick, inds) == True)[0]
+        inds_to_pick = np.delete(inds_to_pick, inds_to_delete)
+        #push all on the non inds dic into - because for each JK we will ignore the files for this respective sim
+        tmp = np.in1d(fullarr, inds)
+        non_inds = np.where(tmp == False)[0]
+        jk_samples.append( (non_inds) )
+    return np.asarray( jk_samples )
+
+
+def get_jk_covariance(cutouts, howmany_jk_samples, weights = None, only_T = False):
+
+    total_clusters = len(cutouts)
+    jk_samples = perform_simple_jackknife_sampling(total_clusters, howmany_jk_samples)
+
+    simarr = np.arange(howmany_jk_samples)
+    ny, nx = cutouts[0][0].shape
+    npixels = ny * nx
+    if only_T:
+        tqu_len = 1
+    else:
+        tqu_len = len(cutouts[0])
+
+    if weights is None:
+        weights = np.ones( total_clusters )
+
+    stacked_cutouts_for_jk_cov = np.zeros( (tqu_len * npixels, howmany_jk_samples) )
+
+    for jkcnt, n in enumerate( simarr ):
+
+        #print('JK = %s of %s' %(jkcnt, howmany_jk_samples), end = ' ')
+        non_inds = jk_samples[n]
+
+        tqu_cluster_stack = []
+        for tqucntr in range(tqu_len):
+
+            weighted_cluster_stack_arr = []
+            curr_cutouts, curr_weights = cutouts[non_inds, tqucntr], weights[non_inds, tqucntr]
+            for (c, w) in zip( curr_cutouts, curr_weights ):
+
+                weighted_cluster_stack_arr.append( c * w)
+
+            weighted_cluster_stack_arr = np.asarray(weighted_cluster_stack_arr)
+
+            cluster_stack = np.sum( weighted_cluster_stack_arr, axis = 0)/np.sum( curr_weights )
+            #imshow(cluster_stack, interpolation = 'bicubic', cmap = cm.RdYlBu); colorbar(); title(n); show(); sys.exit()
+            tqu_cluster_stack.append(cluster_stack.flatten())
+        stacked_cutouts_for_jk_cov[:, n] = np.asarray(tqu_cluster_stack).flatten()
+        #subplot(5,5,n+1); imshow(stacked_cutouts_for_jk_cov[:, n].reshape(ny,nx), interpolation = 'bicubic', cmap = cm.RdYlBu); colorbar(); title(n); 
+
+    #show(); #sys.exit()
+    '''
+    mean = np.mean(stacked_cutouts_for_jk_cov, axis = 1)
+    for jkcnt, n in enumerate( simarr ):
+        stacked_cutouts_for_jk_cov[:, n] = stacked_cutouts_for_jk_cov[:, n] - mean
+    '''
+
+    jk_cov = (howmany_jk_samples - 1) * np.cov(stacked_cutouts_for_jk_cov)    
+
+
+    return jk_cov
+
+################################################################################################################
+
