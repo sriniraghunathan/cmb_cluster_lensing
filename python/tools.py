@@ -127,7 +127,15 @@ def get_nl(noiseval, el, beamval = None, use_beam_window = False, uk_to_K = Fals
 
 ################################################################################################################
 ################################################################################################################
+def dl_to_cl(el, cl_or_dl, inverse = 0):
+    dl_fac = (el * (el+1)/2./np.pi)
+    if inverse:
+        return cl_or_dl*dl_fac
+    else:
+        return cl_or_dl/dl_fac
 
+################################################################################################################
+################################################################################################################
 def perform_simple_jackknife_sampling(total, howmany_jk_samples):
     each_split_should_contain = int(total * 1./howmany_jk_samples)
     fullarr = np.arange(total)
@@ -143,7 +151,6 @@ def perform_simple_jackknife_sampling(total, howmany_jk_samples):
         non_inds = np.where(tmp == False)[0]
         jk_samples.append( (non_inds) )
     return np.asarray( jk_samples )
-
 
 def get_jk_covariance(cutouts, howmany_jk_samples, weights = None, only_T = False):
 
@@ -175,7 +182,7 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights = None, only_T = Fals
             curr_cutouts, curr_weights = cutouts[non_inds, tqucntr], weights[non_inds, tqucntr]
             for (c, w) in zip( curr_cutouts, curr_weights ):
 
-                weighted_cluster_stack_arr.append( c * w)
+                weighted_cluster_stack_arr.append( c * w )
 
             weighted_cluster_stack_arr = np.asarray(weighted_cluster_stack_arr)
 
@@ -191,11 +198,34 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights = None, only_T = Fals
     for jkcnt, n in enumerate( simarr ):
         stacked_cutouts_for_jk_cov[:, n] = stacked_cutouts_for_jk_cov[:, n] - mean
     '''
-
+    print(stacked_cutouts_for_jk_cov.shape)
     jk_cov = (howmany_jk_samples - 1) * np.cov(stacked_cutouts_for_jk_cov)    
 
 
     return jk_cov
 
 ################################################################################################################
+################################################################################################################
 
+def fn_get_param_dict(paramfile):
+    params, paramvals = np.genfromtxt(
+        paramfile, delimiter = '=', unpack = True, autostrip = True, dtype='unicode')
+    param_dict = {}
+    for p,pval in zip(params,paramvals):
+        if pval in ['T', 'True']:
+            pval = True
+        elif pval in ['F', 'False']:
+            pval = False
+        elif pval == 'None':
+            pval = None
+        else:
+            try:
+                pval = float(pval)
+                if int(pval) == float(pval):
+                    pval = int(pval)
+            except:
+                pass
+        # replace unallowed characters in paramname
+        p = p.replace('(','').replace(')','')
+        param_dict[p] = pval
+    return param_dict
