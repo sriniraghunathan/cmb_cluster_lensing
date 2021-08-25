@@ -4,26 +4,28 @@
 ########################
 #load desired modules
 import numpy as np, sys, os, scipy as sc
+sys_path_folder='/Users/sraghunathan/Research/SPTPol/analysis/git/cmb_cluster_lensing/python/'
 sys.path.append(sys_path_folder)
-import flatsky, tools, lensing
 
+import flatsky, tools, lensing
 
 from tqdm import tqdm
 
 from pylab import *
-cmap=cm.RdYlBu_r
+cmap = cm.RdYlBu_r
 
 import warnings
 warnings.filterwarnings('ignore',category=RuntimeWarning)
+print('\n')
 ########################
 
 
 ########################
 paramfile = 'params.ini'
+print('\tread/get necessary params')
 param_dict = tools.fn_get_param_dict(paramfile)
 
 data_folder = param_dict['data_folder']
-sys_path_folder = param_dict['sys_path_folder']
 
 #params or supply a params file
 dx = param_dict['dx'] #pixel resolution in arcmins
@@ -45,10 +47,9 @@ cls_file = '%s/%s' %(param_dict['data_folder'], param_dict['cls_file'])
 
 if not pol:
     tqulen = 1
-    tqu_tit_arr = ['T']
 else:
     tqulen = 3
-    tqu_tit_arr = ['T', 'Q', 'U']
+tqu_tit_arr = ['T', 'Q', 'U']
 
 
 #sim stuffs
@@ -97,7 +98,7 @@ else:
     tqulen=3
 tqu_tit_arr=['T', 'Q', 'U']
 
-el, dl_tt, dl_ee, dl_bb, dl_te =np.loadtxt(Cls_file, unpack=1)
+el, dl_tt, dl_ee, dl_bb, dl_te =np.loadtxt(cls_file, unpack=1)
 dl_all=np.asarray( [dl_tt, dl_ee, dl_bb, dl_te] )
 cl_all=tools.dl_to_cl(el, dl_all)
 cl_tt, cl_ee, cl_bb, cl_te=cl_all #Cls in uK
@@ -108,23 +109,23 @@ if not pol:
 else:
     cl=cl_all
 #loglog(el, cl_tt)
-print(len(el))
+#print(len(el))
 ########################
 
 ########################
 #get beam and noise
-bl=tools.get_bl(beamval, el, make_2d=1, mapparams=mapparams)
-nl_dic={}
+bl = tools.get_bl(beamval, el, make_2d = 1, mapparams = mapparams)
+nl_dic = {}
 if pol:
-    nl=[]
+    nl = []
     for n in noiseval:
         nl.append( tools.get_nl(n, el) )
-    nl=np.asarray( nl )
-    nl_dic['T'], nl_dic['P']=nl[0], nl[1]
+    nl = np.asarray( nl )
+    nl_dic['T'], nl_dic['P'] = nl[0], nl[1]
 else:
-    nl=[tools.get_nl(noiseval, el)]
-    nl_dic['T']=nl[0]
-print(nl_dic)
+    nl = [tools.get_nl(noiseval, el)]
+    nl_dic['T'] = nl[0]
+print('\tkeys in nl_dict = %s' %(str(nl_dic.keys())))
 ########################
 
 ########################
@@ -145,15 +146,14 @@ if debug:
 
 ########################
 #NFW lensing convergence
-ra_grid_deg, dec_grid_deg=ra_grid/60., dec_grid/60.
-param_dict={}
+ra_grid_deg, dec_grid_deg = ra_grid/60., dec_grid/60.
 
-M200c_list=np.tile(cluster_mass, total_clusters)
-redshift_list=np.tile(cluster_z, total_clusters)
-ra_list=dec_list=np.zeros(total_clusters)
+M200c_list = np.tile(cluster_mass, total_clusters)
+redshift_list = np.tile(cluster_z, total_clusters)
+ra_list = dec_list = np.zeros(total_clusters)
 
-kappa_arr=lensing.get_convergence(ra_grid_deg, dec_grid_deg, ra_list, dec_list, M200c_list, redshift_list, param_dict)
-print(kappa_arr.shape)
+kappa_arr = lensing.get_convergence(ra_grid_deg, dec_grid_deg, ra_list, dec_list, M200c_list, redshift_list, param_dict)
+print('\tShape of convergence array is %s' %(str(kappa_arr.shape)))
 ########################
 
 ########################
@@ -168,7 +168,7 @@ for iter in range( total_sim_types):
         nsims=total_randoms        
         sim_type='randoms'
     sim_dic[sim_type]={}
-    print('\n creating %s %s simulations' %(nsims, sim_type))
+    print('\tcreating %s %s simulations' %(nsims, sim_type))
     sim_arr=[]
     for i in tqdm(range(nsims)):
         if not pol:
@@ -283,8 +283,8 @@ for sim_type in sim_dic:
 
     grad_mag_arr=np.asarray(grad_mag_arr)
     cutouts_rotated_arr=np.asarray(cutouts_rotated_arr)
-    print(cutouts_rotated_arr[:, 0].shape)
-    print(grad_mag_arr.shape)
+    #print(cutouts_rotated_arr[:, 0].shape)
+    #print(grad_mag_arr.shape)
     
     sim_dic[sim_type]['cutouts_rotated']=cutouts_rotated_arr
     sim_dic[sim_type]['grad_mag']=grad_mag_arr    
@@ -301,7 +301,7 @@ for sim_type in sim_dic:
     weighted_stack=np.sum( cutouts_rotated_arr[:, :] * grad_mag_arr[:, :, None, None], axis=0)
     weights=np.sum( grad_mag_arr, axis=0)
     stack=weighted_stack / weights[:, None, None]
-    print(weighted_stack.shape, weights.shape)
+    #print(weighted_stack.shape, weights.shape)
     sim_dic[sim_type]['stack']=stack
 
 ########################
@@ -355,7 +355,7 @@ if (0):
 cluster_grad_mag_arr=sim_dic['clusters']['grad_mag']
 
 jk_cov=tools.get_jk_covariance(cluster_cutouts_rotated_arr, param_dict['howmany_jk_samples'], weights=cluster_grad_mag_arr, only_T=True)
-print(jk_cov.shape)
+#print(jk_cov.shape)
 imshow(jk_cov, cmap=cmap); colorbar(); show()
 ########################
 
