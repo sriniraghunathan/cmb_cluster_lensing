@@ -223,6 +223,7 @@ if debug: #just plot the last map
             axhline(lw=1.); axvline(lw=1.); #xlabel(r'X [arcmins]'); #ylabel(r'Y [arcmins]')
             subplot(3,3,(tqucntr*3)+3);imshow(sim_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB + Noise: %s' %(tqu_tit_arr[tqucntr]))
             axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); #ylabel(r'Y [arcmins]')
+    show()
 
 
 if debug: #get power spectrum of maps to ensure sims are fine
@@ -244,11 +245,13 @@ if debug: #get power spectrum of maps to ensure sims are fine
 
     ylabel(r'$C_{\ell}$ [$\mu$K$^{2}$]')
     xlabel(r'Multipole $\ell$')
+    show()
 
 ########################
 
 ########################
 #get gradient information for all cluster cutouts
+print('\tget gradient information for all cluster cutouts')
 for sim_type in sim_dic:
     sim_arr=sim_dic[sim_type]['sims']
     nsims=len(sim_arr)
@@ -294,6 +297,7 @@ for sim_type in sim_dic:
 
 ########################
 #stack rotated cutouts + apply gradient magnitude weights
+print('\tstack rotated cutouts + apply gradient magnitude weights')
 for sim_type in sim_dic:
     cutouts_rotated_arr=sim_dic[sim_type]['cutouts_rotated']
     grad_mag_arr=sim_dic[sim_type]['grad_mag']
@@ -316,6 +320,7 @@ final_stack=cluster_stack - random_stack
 sbpl=1
 tr, tc=3, 3
 
+close()
 clf()
 figure(figsize=(10,10))
 subplots_adjust(hspace=0.2, wspace=0.1)
@@ -356,6 +361,7 @@ cluster_grad_mag_arr=sim_dic['clusters']['grad_mag']
 
 jk_cov=tools.get_jk_covariance(cluster_cutouts_rotated_arr, param_dict['howmany_jk_samples'], weights=cluster_grad_mag_arr, only_T=True)
 #print(jk_cov.shape)
+clf()
 imshow(jk_cov, cmap=cmap); colorbar(); show()
 ########################
 
