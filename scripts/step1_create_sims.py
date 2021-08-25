@@ -187,7 +187,7 @@ for iter in range( total_sim_types):
                 unlensed_cmb=np.copy( cmb_map[tqu] )
                 lensed_cmb=lensing.perform_lensing(ra_grid_deg, dec_grid_deg, unlensed_cmb, kappa_arr[i], mapparams)
                 if i == 0:
-                    subplot(1,3,tqu+1); imshow(lensed_cmb - unlensed_cmb, extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Sim=%s: %s' %(i, tqu_tit_arr[tqu])); 
+                    subplot(1,tqulen,tqu+1); imshow(lensed_cmb - unlensed_cmb, extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Sim=%s: %s' %(i, tqu_tit_arr[tqu])); 
                     axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); 
                     if tqu == 0:
                         ylabel(r'Y [arcmins]')
@@ -205,10 +205,10 @@ for iter in range( total_sim_types):
 ########################
 if debug: #just plot the last map
     clf()
-    figure(figsize=(10,10))
-    subplots_adjust(hspace=0.2, wspace=0.1)
 
     if not pol:
+        figure(figsize=(6,4))
+        subplots_adjust(hspace=0.2, wspace=0.1)
         subplot(131);imshow(cmb_map[0], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB')
         axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); ylabel(r'Y [arcmins]')
         subplot(132);imshow(noise_map[0], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Noise')
@@ -216,12 +216,14 @@ if debug: #just plot the last map
         subplot(133);imshow(sim_map[0], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB + Noise')
         axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); #ylabel(r'Y [arcmins]')
     else:
+        figure(figsize=(10,10))
+        subplots_adjust(hspace=0.2, wspace=0.1)
         for tqucntr in range(tqulen):
-            subplot(3,3,(tqucntr*3)+1);imshow(cmb_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB: %s' %(tqu_tit_arr[tqucntr]))
+            subplot(tqulen,3,(tqucntr*3)+1);imshow(cmb_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB: %s' %(tqu_tit_arr[tqucntr]))
             axhline(lw=1.); axvline(lw=1.); ylabel(r'Y [arcmins]')
-            subplot(3,3,(tqucntr*3)+2);imshow(noise_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Noise: %s' %(tqu_tit_arr[tqucntr]))
+            subplot(tqulen,3,(tqucntr*3)+2);imshow(noise_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Noise: %s' %(tqu_tit_arr[tqucntr]))
             axhline(lw=1.); axvline(lw=1.); #xlabel(r'X [arcmins]'); #ylabel(r'Y [arcmins]')
-            subplot(3,3,(tqucntr*3)+3);imshow(sim_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB + Noise: %s' %(tqu_tit_arr[tqucntr]))
+            subplot(tqulen,3,(tqucntr*3)+3);imshow(sim_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB + Noise: %s' %(tqu_tit_arr[tqucntr]))
             axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); #ylabel(r'Y [arcmins]')
     show()
 
@@ -318,7 +320,7 @@ cluster_stack=sim_dic['clusters']['stack']
 random_stack=sim_dic['randoms']['stack']
 final_stack=cluster_stack - random_stack
 sbpl=1
-tr, tc=3, 3
+tr, tc=tqulen, 3
 
 close()
 clf()
