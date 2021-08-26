@@ -25,7 +25,7 @@ parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help
 parser.add_argument('-minM', dest='minM', action='store', help='minM', type=float, default=0.)
 parser.add_argument('-maxM', dest='maxM', action='store', help='maxM', type=float, default=5.)
 parser.add_argument('-delM', dest='delM', action='store', help='delM', type=float, default=0.1)
-parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=1)
+parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=5)
 parser.add_argument('-random_seed_for_models', dest='random_seed_for_models', action='store', help='random_seed_for_models', type=int, default=100)
 
 args = parser.parse_args()
@@ -203,6 +203,7 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
                 else:
                     fg_map = np.zeros_like(noise_map)
             
+            if i == 0: print(cmb_map[0,10,10])
             if do_lensing:
                 cmb_map_lensed=[]
                 for tqu in range(tqulen):

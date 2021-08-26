@@ -89,13 +89,14 @@ bg_model_keyname = (0., 0.7)
 for model_keyname in model_dic:
     if model_keyname == bg_model_keyname: continue
     model_dic[model_keyname] -= model_dic[bg_model_keyname]
-    if (1):
+    if (0):
         for tqu in range(len(model_dic[model_keyname])):
-            subplot(1, tqulen, tqu+1); imshow(model_dic[model_keyname][tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar()
+            subplot(1, tqulen, tqu+1); imshow(model_dic[model_keyname][tqu], cmap=cmap, extent = [x1, x2, x1, x2], vmin = -2., vmax = 2.); 
+            colorbar()
             title('(%s, %s): %s' %(model_keyname[0], model_keyname[1], tqu_tit_arr[tqu]))
             axhline(lw = 0.5); axvline(lw = 0.5)
         show(); 
-sys.exit()
+
 if (1):
     #params or supply a params file
     noiseval = param_dict['noiseval'] #uK-arcmin
@@ -163,10 +164,11 @@ for simcntr in sorted(data_stack_dic):
 combined_loglarr = np.sum(master_loglarr, axis = 0)
 massarr, combined_larr, combined_recov_mass, combined_snr = tools.lnlike_to_like(massarr, combined_loglarr)
 plot(massarr, combined_larr, lw = 1.5, color = 'black', label = r'Combined');
-legend(loc = 4, ncol = 3, fontsize = 8)
+legend(loc = 4, ncol = 4, fontsize = 8)
 xlabel(r'M$_{200m}$ [$10^{14}$M$_{\odot}$]', fontsize = 14)
 ylabel(r'Normalised $\mathcal{L}$', fontsize = 14)
 axvline(cluster_mass/1e14, ls = '-.', lw = 2.)
+title(r'%s clusters; $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$' %(total_clusters, noiseval))
 show(); 
 sys.exit()
 
