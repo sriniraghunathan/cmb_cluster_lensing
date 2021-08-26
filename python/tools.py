@@ -8,14 +8,6 @@ from pylab import *
 #################################################################################
 #################################################################################
 
-def is_seq(o):
-    """
-    determine if the passed variable is an array.
-    """
-    return hasattr(o, '__len__')
-
-#################################################################################
-
 def rotate_cutout(cutout, angle_in_deg):
 
     return ndimage.interpolation.rotate(cutout, angle_in_deg, reshape = False, mode = 'reflect')
@@ -206,26 +198,3 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights = None, only_T = Fals
 
 ################################################################################################################
 ################################################################################################################
-
-def fn_get_param_dict(paramfile):
-    params, paramvals = np.genfromtxt(
-        paramfile, delimiter = '=', unpack = True, autostrip = True, dtype='unicode')
-    param_dict = {}
-    for p,pval in zip(params,paramvals):
-        if pval in ['T', 'True']:
-            pval = True
-        elif pval in ['F', 'False']:
-            pval = False
-        elif pval == 'None':
-            pval = None
-        else:
-            try:
-                pval = float(pval)
-                if int(pval) == float(pval):
-                    pval = int(pval)
-            except:
-                pass
-        # replace unallowed characters in paramname
-        p = p.replace('(','').replace(')','')
-        param_dict[p] = pval
-    return param_dict

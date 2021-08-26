@@ -44,7 +44,7 @@ if clusters_or_randoms == 'randoms':
 ########################
 paramfile = 'params.ini'
 print('\tread/get necessary params')
-param_dict = tools.fn_get_param_dict(paramfile)
+param_dict = misc.get_param_dict(paramfile)
 
 data_folder = param_dict['data_folder']
 results_folder = param_dict['results_folder']
@@ -396,13 +396,8 @@ for sim_type in sim_dic:
 
 ########################
 #save results
-op_folder = '%s/nx%s_dx%s/beam%s/noise%s/%samcutouts/' %(results_folder, nx, dx, beamval, noiseval, cutout_size_am)
-if pol:
-    op_folder = '%s/TQU/' %(op_folder)
-else:
-    op_folder = '%s/T/' %(op_folder)
-if not os.path.exists(op_folder): os.system('mkdir -p %s' %(op_folder))
-op_fname = '%s/%s_%sobjects_%ssims%sto%s.npy' %(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
+op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = pol)
+op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
 sim_dic[sim_type].pop('sims')
 np.save(op_fname, sim_dic)
 logline = 'All completed. Results dumped in %s' %(op_fname)
