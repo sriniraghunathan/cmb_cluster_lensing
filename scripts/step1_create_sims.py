@@ -7,7 +7,7 @@ import numpy as np, sys, os, scipy as sc, argparse
 sys_path_folder='/Users/sraghunathan/Research/SPTPol/analysis/git/cmb_cluster_lensing/python/'
 sys.path.append(sys_path_folder)
 
-import flatsky, tools, lensing, foregrounds
+import flatsky, tools, lensing, foregrounds, misc
 
 from tqdm import tqdm
 
@@ -82,7 +82,7 @@ tqu_tit_arr = ['T', 'Q', 'U']
 
 
 #sim stuffs
-total_sim_types = param_dict['total_sim_types'] #unlensed background and lensed clusters
+#total_sim_types = param_dict['total_sim_types'] #unlensed background and lensed clusters
 total_clusters = param_dict['total_clusters']
 total_randoms = param_dict['total_randoms'] #total_clusters * 10 #much more randoms to ensure we are not dominated by variance in background stack.
 
@@ -127,55 +127,20 @@ else:
     tqulen=3
 tqu_tit_arr=['T', 'Q', 'U']
 
-el, dl_tt, dl_ee, dl_bb, dl_te =np.loadtxt(cls_file, unpack=1)
-dl_all=np.asarray( [dl_tt, dl_ee, dl_bb, dl_te] )
-cl_all=tools.dl_to_cl(el, dl_all)
-cl_tt, cl_ee, cl_bb, cl_te=cl_all #Cls in uK
-cl_dic={}
-cl_dic['TT'], cl_dic['EE'], cl_dic['BB'], cl_dic['TE']=cl_tt, cl_ee, cl_bb, cl_te
-if not pol:
-    cl=[cl_tt]    
-else:
-    cl=cl_all
-#loglog(el, cl_tt)
-#print(len(el))
+el, cl = tools.get_cmb_cls(cls_file, pol = pol)
 ########################
 
 ########################
 #get beam and noise
 bl = tools.get_bl(beamval, el, make_2d = 1, mapparams = mapparams)
-nl_dic = {}
-if pol:
-    nl = []
-    for n in noiseval:
-        nl.append( tools.get_nl(n, el) )
-    nl = np.asarray( nl )
-    nl_dic['T'], nl_dic['P'] = nl[0], nl[1]
-else:
-    nl = [tools.get_nl(noiseval, el)]
-    nl_dic['T'] = nl[0]
+nl_dic = tools.get_nl_dic(noiseval, el, pol = pol)
 print('\tkeys in nl_dict = %s' %(str(nl_dic.keys())))
 ########################
 
 ########################
 #get foreground spectra if requested
 if fg_gaussian:
-    el_fg_tmp, cl_fg_tmp = foregrounds.get_foreground_power_spt('all', freq1=150, freq2=None, units='uk', lmax = None)
-    cl_fg_temp = np.interp(el, el_fg_tmp, cl_fg_tmp)
-    cl_fg = [cl_fg_temp]
-    if pol:
-        el_fg_tmp, cl_dg_cl = foregrounds.get_foreground_power_spt('DG-Cl', freq1=150, freq2=None, units='uk', lmax = None)
-        el_fg, cl_dg_po = foregrounds.get_foreground_power_spt('DG-Po', freq1=150, freq2=None, units='uk', lmax = None)
-        el_fg, cl_rg = foregrounds.get_foreground_power_spt('RG', freq1=150, freq2=None, units='uk', lmax = None)
-        cl_dg = cl_dg_cl + cl_dg_po
-        cl_dg = cl_dg * param_dict['pol_frac_cib']
-        cl_rg = cl_rg * param_dict['pol_frac_cib']
-        cl_fg_tmp = cl_dg + cl_rg
-        cl_fg_P = np.interp(el, el_fg_tmp, cl_fg_tmp)
-        cl_fg.append(cl_fg_pol)
-    cl_fg = np.asarray( cl_fg )
-else:
-    cl_fg = np.zeros_like(nl)
+    cl_fg_dic = tools.get_cl_fg(el = el, freq = 150, pol = pol)
 ########################
 
 ########################
@@ -183,12 +148,14 @@ else:
 if debug:
     ax =subplot(111, yscale='log', xscale='log')
     plot(el, cl[0], color='black', label=r'TT')
-    plot(el, nl[0], color='black', ls ='--', label=r'Noise: T')
-    plot(el, cl_fg[0], color='black', ls ='-.', label=r'Foregrounds: T')
+    plot(el, nl_dic['T'], color='black', ls ='--', label=r'Noise: T')
+    if fg_gaussian:
+        plot(el, cl_fg_dic['T'], color='black', ls ='-.', label=r'Foregrounds: T')
     if pol:
         plot(el, cl[1], color='orangered', label=r'EE')
-        plot(el, nl[1], color='orangered', ls ='--', label=r'Noise: P')
-        plot(el, cl_fg[1], color='orangered', ls ='-.', label=r'Foregrounds: P')
+        plot(el, nl_dic['P'], color='orangered', ls ='--', label=r'Noise: P')
+        if fg_gaussian:
+            plot(el, cl_fg_dic['P'], color='orangered', ls ='-.', label=r'Foregrounds: P')
     legend(loc=1)
     ylim(1e-10, 1e4)
     ylabel(r'$C_{\ell}$ [$\mu$K$^{2}$]')
@@ -197,15 +164,16 @@ if debug:
 ########################
 
 ########################
-#NFW lensing convergence
-ra_grid_deg, dec_grid_deg = ra_grid/60., dec_grid/60.
+if clusters_or_randoms == 'clusters':
+    #NFW lensing convergence
+    ra_grid_deg, dec_grid_deg = ra_grid/60., dec_grid/60.
 
-M200c_list = np.tile(cluster_mass, total_clusters)
-redshift_list = np.tile(cluster_z, total_clusters)
-ra_list = dec_list = np.zeros(total_clusters)
+    M200c_list = np.tile(cluster_mass, total_clusters)
+    redshift_list = np.tile(cluster_z, total_clusters)
+    ra_list = dec_list = np.zeros(total_clusters)
 
-kappa_arr = lensing.get_convergence(ra_grid_deg, dec_grid_deg, ra_list, dec_list, M200c_list, redshift_list, param_dict)
-print('\tShape of convergence array is %s' %(str(kappa_arr.shape)))
+    kappa_arr = lensing.get_convergence(ra_grid_deg, dec_grid_deg, ra_list, dec_list, M200c_list, redshift_list, param_dict)
+    print('\tShape of convergence array is %s' %(str(kappa_arr.shape)))
 ########################
 
 ########################
@@ -228,21 +196,21 @@ for simcntr in range( start, end ):
     for i in tqdm(range(nclustersorrandoms)):
         if not pol:
             cmb_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl[0], bl=bl)] )
-            noise_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, nl[0])] )
+            noise_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, nl_dic['T'])] )
             if fg_gaussian:
-                fg_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl_fg[0])] )
+                fg_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['T'])] )
             else:
                 fg_map = np.zeros_like(noise_map)
         else:
             cmb_map=flatsky.make_gaussian_realisation(mapparams, el, cl[0], cl2=cl[1], cl12=cl[3], bl=bl, qu_or_eb='qu')
-            noise_map_T=flatsky.make_gaussian_realisation(mapparams, el, nl[0])
-            noise_map_Q=flatsky.make_gaussian_realisation(mapparams, el, nl[1])
-            noise_map_U=flatsky.make_gaussian_realisation(mapparams, el, nl[1])
+            noise_map_T=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['T'])
+            noise_map_Q=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['P'])
+            noise_map_U=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['P'])
             noise_map=np.asarray( [noise_map_T, noise_map_Q, noise_map_U] )
             if fg_gaussian:
-                fg_map_T=flatsky.make_gaussian_realisation(mapparams, el, cl_fg[0])
-                fg_map_Q=flatsky.make_gaussian_realisation(mapparams, el, cl_fg[1])
-                fg_map_U=flatsky.make_gaussian_realisation(mapparams, el, cl_fg[1])
+                fg_map_T=flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['T'])
+                fg_map_Q=flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['P'])
+                fg_map_U=flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['P'])
                 fg_map=np.asarray( [fg_map_T, fg_map_Q, fg_map_U] )
             else:
                 fg_map = np.zeros_like(noise_map)
@@ -339,10 +307,10 @@ for sim_type in sim_dic:
         if apply_wiener_filter:
             if pol:
                 cl_signal_arr=[cl[0], cl[1], cl[1]]
-                cl_noise_arr=[nl[0], nl[1], nl[1]]
+                cl_noise_arr=[nl_dic['T'], nl_dic['P'], nl_dic['P']]
             else:
                 cl_signal_arr=[cl[0]]
-                cl_noise_arr=[nl[0]]
+                cl_noise_arr=[nl_dic['T']]
 
         #get median gradient direction and magnitude for all cluster cutouts + rotate them along median gradient direction.
         ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, cutout_size_am)
@@ -399,6 +367,10 @@ for sim_type in sim_dic:
 op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = pol)
 op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
 sim_dic[sim_type].pop('sims')
+if clusters_or_randoms == 'randoms':
+    sim_dic[sim_type].pop('cutouts_rotated')
+    sim_dic[sim_type].pop('grad_mag')
+sim_dic['param_dict']=param_dict
 np.save(op_fname, sim_dic)
 logline = 'All completed. Results dumped in %s' %(op_fname)
 print(logline)

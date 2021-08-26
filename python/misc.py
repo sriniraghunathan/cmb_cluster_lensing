@@ -51,8 +51,8 @@ def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol
 ################################################################################################################
 ################################################################################################################
 
-def get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end):
-    return '%s/%s_%sobjects_%ssims%sto%s.npy' %(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
+def get_op_fname(op_folder, sim_type, nclustersorrandoms, total_sims, start, end):
+    return '%s/%s_%sobjects_%ssims%sto%s.npy' %(op_folder, sim_type, nclustersorrandoms, total_sims, start, end)
 
 ################################################################################################################
 ################################################################################################################

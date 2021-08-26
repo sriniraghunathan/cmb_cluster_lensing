@@ -149,6 +149,7 @@ def get_convergence(ra_grid, dec_grid, ra_list, dec_list, mass_list, z_list, par
     for i in range(tot_iter):
         #print(i, end = ' ')
         ra, dec, Mdelta, z = ra_list[i], dec_list[i], mass_list[i], z_list[i]
+        if Mdelta == 0.: Mdelta = 1e5
         if i == 0:
             cluster_coords = coord.SkyCoord(ra = ra*u.degree, dec = dec*u.degree)
             theta_grid = map_coords.separation(cluster_coords).value*(np.pi/180.)

@@ -1,4 +1,4 @@
-import numpy as np, os, flatsky
+import numpy as np, os, flatsky, foregrounds
 import scipy as sc
 import scipy.ndimage as ndimage
 
@@ -6,6 +6,60 @@ from pylab import *
 
 #################################################################################
 #################################################################################
+#################################################################################
+
+def get_cmb_cls(cls_file, pol = False):
+    el, dl_tt, dl_ee, dl_bb, dl_te =np.loadtxt(cls_file, unpack=1)
+    dl_all=np.asarray( [dl_tt, dl_ee, dl_bb, dl_te] )
+    cl_all=dl_to_cl(el, dl_all)
+    cl_tt, cl_ee, cl_bb, cl_te=cl_all #Cls in uK
+    cl_dic={}
+    cl_dic['TT'], cl_dic['EE'], cl_dic['BB'], cl_dic['TE']=cl_tt, cl_ee, cl_bb, cl_te
+    if not pol:
+        cl=[cl_tt]    
+    else:
+        cl=cl_all
+
+    #loglog(el, cl_tt)
+    #print(len(el))
+    return el, cl
+
+#################################################################################
+
+def get_nl_dic(noiseval, el, pol = False):
+    nl_dic = {}
+    if pol:
+        nl = []
+        for n in noiseval:
+            nl.append( get_nl(n, el) )
+        nl = np.asarray( nl )
+        nl_dic['T'], nl_dic['P'] = nl[0], nl[1]
+    else:
+        nl = [get_nl(noiseval, el)]
+        nl_dic['T'] = nl[0]
+    return nl_dic
+
+#################################################################################
+
+def get_cl_fg(el = None, freq = 150, pol = False, units='uk', lmax = None):
+    el_fg_tmp, cl_fg_tmp = foregrounds.get_foreground_power_spt('all', freq1=150, freq2=None, units=units, lmax = lmax)
+    if el is None:
+        el = np.copy(el_fg_tmp)
+    cl_fg_temp = np.interp(el, el_fg_tmp, cl_fg_tmp)
+    cl_fg_dic = {}
+    cl_fg_dic['T'] = cl_fg_temp
+    if pol:
+        el_fg_tmp, cl_dg_cl = foregrounds.get_foreground_power_spt('DG-Cl', freq1=150, freq2=None, units='uk', lmax = None)
+        el_fg, cl_dg_po = foregrounds.get_foreground_power_spt('DG-Po', freq1=150, freq2=None, units='uk', lmax = None)
+        el_fg, cl_rg = foregrounds.get_foreground_power_spt('RG', freq1=150, freq2=None, units='uk', lmax = None)
+        cl_dg = cl_dg_cl + cl_dg_po
+        cl_dg = cl_dg * param_dict['pol_frac_cib']
+        cl_rg = cl_rg * param_dict['pol_frac_cib']
+        cl_fg_tmp = cl_dg + cl_rg
+        cl_fg_P = np.interp(el, el_fg_tmp, cl_fg_tmp)
+        cl_fg_dic['P']=cl_fg_pol
+    return cl_fg_dic
+
 #################################################################################
 
 def rotate_cutout(cutout, angle_in_deg):
