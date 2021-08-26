@@ -72,14 +72,14 @@ except:
     fg_gaussian = False
 
 try:
-    add_cluster_tsz=param_dict['add_cluster_tsz=True']
+    add_cluster_tsz=param_dict['add_cluster_tsz']
 except:
     add_cluster_tsz=False
 
 try:
-    add_cluster_tsz=param_dict['add_cluster_tsz=True']
+    add_cluster_ksz=param_dict['add_cluster_ksz']
 except:
-    add_cluster_tsz=False
+    add_cluster_ksz=False
 
 #CMB power spectrum
 cls_file = '%s/%s' %(param_dict['data_folder'], param_dict['cls_file'])
@@ -377,6 +377,8 @@ for sim_type in sim_dic:
 fg_str=''
 if fg_gaussian:
     fg_str = 'withgaussianfg'
+else:
+    fg_str = 'nogaussianfg'
 if add_cluster_tsz:
     fg_str = '%s_withclustertsz' %(fg_str)
 if add_cluster_ksz:

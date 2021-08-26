@@ -21,11 +21,11 @@ print('\n')
 
 ########################
 parser = argparse.ArgumentParser(description='')
-parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/with_gaussian_fg/T/clusters_700objects_25sims0to25.npy')
+parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/withgaussianfg/T/clusters_700objects_25sims0to25.npy')
 parser.add_argument('-minM', dest='minM', action='store', help='minM', type=float, default=0.)
 parser.add_argument('-maxM', dest='maxM', action='store', help='maxM', type=float, default=5.)
 parser.add_argument('-delM', dest='delM', action='store', help='delM', type=float, default=0.1)
-parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=5)
+parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=1)
 parser.add_argument('-random_seed_for_models', dest='random_seed_for_models', action='store', help='random_seed_for_models', type=int, default=100)
 
 args = parser.parse_args()
@@ -69,6 +69,16 @@ try:
     fg_gaussian = param_dict['fg_gaussian'] #Gaussian realisation of all foregrounds
 except:
     fg_gaussian = False
+
+try:
+    add_cluster_tsz=param_dict['add_cluster_tsz']
+except:
+    add_cluster_tsz=False
+
+try:
+    add_cluster_ksz=param_dict['add_cluster_ksz']
+except:
+    add_cluster_ksz=False
 
 #CMB power spectrum
 cls_file = '%s/%s' %(param_dict['data_folder'], param_dict['cls_file'])
@@ -289,8 +299,16 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
             #print(weighted_stack.shape, weights.shape)
             model_dic[simcntr] = stack
 
+    fg_str=''
     if fg_gaussian:
-        fg_str = 'with_gaussian_fg'
+        fg_str = 'withgaussianfg'
+    else:
+        fg_str = 'nogaussianfg'
+    if add_cluster_tsz:
+        fg_str = '%s_withclustertsz' %(fg_str)
+    if add_cluster_ksz:
+        fg_str = '%s_withclusterksz' %(fg_str)
+    fg_str = fg_str.strip('_')
     op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = pol, models = True, fg_str = fg_str)
     extrastr = '_randomseed%s_mass%.3f_z%.3f' %(random_seed_for_models, keyname[0], keyname[1])
     op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, totiters_for_model, extrastr = extrastr)
