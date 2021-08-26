@@ -39,8 +39,10 @@ def get_param_dict(paramfile):
 ################################################################################################################
 ################################################################################################################
 
-def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = False, models = False):
+def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = False, models = False, fg_str = None):
     op_folder = '%s/nx%s_dx%s/beam%s/noise%s/%samcutouts/' %(results_folder, nx, dx, beamval, noiseval, cutout_size_am)
+    if fg_str is not None:
+        op_folder = '%s/%s/' %(op_folder, fg_str)
     if pol:
         op_folder = '%s/TQU/' %(op_folder)
     else:

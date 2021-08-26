@@ -364,7 +364,9 @@ for sim_type in sim_dic:
 
 ########################
 #save results
-op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = pol)
+if fg_gaussian:
+    fg_str = 'with_gaussian_fg'
+op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = pol, fg_str = fg_str)
 op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
 sim_dic[sim_type].pop('sims')
 if clusters_or_randoms == 'randoms':
