@@ -7,7 +7,7 @@ import numpy as np, sys, os, scipy as sc, argparse
 sys_path_folder='/Users/sraghunathan/Research/SPTPol/analysis/git/cmb_cluster_lensing/python/'
 sys.path.append(sys_path_folder)
 
-import flatsky, tools, lensing, foregrounds
+import flatsky, tools, lensing, foregrounds, misc
 
 from tqdm import tqdm
 
@@ -25,6 +25,8 @@ parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help
 parser.add_argument('-minM', dest='minM', action='store', help='minM', type=float, default=0.)
 parser.add_argument('-maxM', dest='maxM', action='store', help='maxM', type=float, default=5.)
 parser.add_argument('-delM', dest='delM', action='store', help='delM', type=float, default=0.1)
+parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=1)
+parser.add_argument('-random_seed_for_models', dest='random_seed_for_models', action='store', help='random_seed_for_models', type=int, default=100)
 
 args = parser.parse_args()
 args_keys = args.__dict__
@@ -138,141 +140,161 @@ print('\tkeys in nl_dict = %s' %(str(nl_dic.keys())))
 if fg_gaussian:
     cl_fg_dic = tools.get_cl_fg(el = el, freq = 150, pol = pol)
 ########################
-print('working here ...'); sys.exit()
 
 ########################
-#NFW lensing convergence
-ra_grid_deg, dec_grid_deg = ra_grid/60., dec_grid/60.
-
-M200c_list = np.tile(cluster_mass, total_clusters)
-redshift_list = np.tile(cluster_z, total_clusters)
-ra_list = dec_list = np.zeros(total_clusters)
-
-kappa_arr = lensing.get_convergence(ra_grid_deg, dec_grid_deg, ra_list, dec_list, M200c_list, redshift_list, param_dict)
-print('\tShape of convergence array is %s' %(str(kappa_arr.shape)))
-########################
-
-########################
-#generating sims
-sim_dic={}
+#generating sims for model now
 do_lensing=True
 nclustersorrandoms=total_clusters
 sim_type='clusters'
+ra_grid_deg, dec_grid_deg = ra_grid/60., dec_grid/60.
 
-sim_dic[sim_type]={}
-sim_dic[sim_type]['sims'] = {}
-print('\tcreating %s %s simulations' %(nclustersorrandoms, sim_type))
-for simcntr in range( start, end ):
-    print('\t\tmock dataset %s of %s' %(simcntr+1, end-start))
-    sim_arr=[]
-    for i in tqdm(range(nclustersorrandoms)):
-        if not pol:
-            cmb_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl[0], bl=bl)] )
-            noise_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, nl_dic['T'])] )
-            if fg_gaussian:
-                fg_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['T'])] )
+
+#model_dic = {}
+cluster_mass_arr = np.arange( minM, maxM+delM/10., delM ) * 1e14
+cluster_z_arr = np.tile( cluster_z, len(cluster_mass_arr) )
+
+for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
+
+
+    keyname = (round(cluster_mass/1e14, 3), round(cluster_z, 3))
+    print('\t###############')
+    print('\tcreating model for %s' %(str(keyname)))
+    print('\t###############')
+    #model_dic[keyname] = {}
+
+    np.random.seed( random_seed_for_models )
+    print('\t\tsetting random seed for model generation. seed is %s' %(random_seed_for_models))
+
+    M200c_list = np.tile(cluster_mass, total_clusters)
+    redshift_list = np.tile(cluster_z, total_clusters)
+    ra_list = dec_list = np.zeros(total_clusters)
+
+    kappa_arr = lensing.get_convergence(ra_grid_deg, dec_grid_deg, ra_list, dec_list, M200c_list, redshift_list, param_dict)
+    #print('\tShape of convergence array is %s' %(str(kappa_arr.shape)))
+
+    sim_dic={}
+    sim_dic[sim_type]={}
+    sim_dic[sim_type]['sims'] = {}
+    sim_dic[sim_type]['cmb_sims'] = {}
+    print('\t\tcreating %s %s simulations' %(nclustersorrandoms, sim_type))
+    for simcntr in range( totiters_for_model ):
+        print('\t\t\tmodel dataset %s of %s' %(simcntr+1, totiters_for_model))
+        cmb_sim_arr,sim_arr=[],[]
+        #for i in tqdm(range(nclustersorrandoms)):
+        for i in range(nclustersorrandoms):
+            if not pol:
+                cmb_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl[0], bl=bl)] )
+                noise_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, nl_dic['T'])] )
+                if fg_gaussian:
+                    fg_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['T'])] )
+                else:
+                    fg_map = np.zeros_like(noise_map)
             else:
-                fg_map = np.zeros_like(noise_map)
-        else:
-            cmb_map=flatsky.make_gaussian_realisation(mapparams, el, cl[0], cl2=cl[1], cl12=cl[3], bl=bl, qu_or_eb='qu')
-            noise_map_T=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['T'])
-            noise_map_Q=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['P'])
-            noise_map_U=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['P'])
-            noise_map=np.asarray( [noise_map_T, noise_map_Q, noise_map_U] )
-            if fg_gaussian:
-                fg_map_T=flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['T'])
-                fg_map_Q=flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['P'])
-                fg_map_U=flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['P'])
-                fg_map=np.asarray( [fg_map_T, fg_map_Q, fg_map_U] )
-            else:
-                fg_map = np.zeros_like(noise_map)
-        
-        if do_lensing:
-            cmb_map_lensed=[]
-            for tqu in range(tqulen):
-                unlensed_cmb=np.copy( cmb_map[tqu] )
-                lensed_cmb=lensing.perform_lensing(ra_grid_deg, dec_grid_deg, unlensed_cmb, kappa_arr[i], mapparams)
-                if i == 0 and debug:
-                    subplot(1,tqulen,tqu+1); imshow(lensed_cmb - unlensed_cmb, extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Sim=%s: %s' %(i, tqu_tit_arr[tqu])); 
-                    axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); 
-                    if tqu == 0:
-                        ylabel(r'Y [arcmins]')
-                cmb_map_lensed.append( lensed_cmb )
-            if i == 0 and debug:
-                show()
-            cmb_map=np.asarray(cmb_map_lensed)
+                cmb_map=flatsky.make_gaussian_realisation(mapparams, el, cl[0], cl2=cl[1], cl12=cl[3], bl=bl, qu_or_eb='qu')
+                noise_map_T=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['T'])
+                noise_map_Q=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['P'])
+                noise_map_U=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['P'])
+                noise_map=np.asarray( [noise_map_T, noise_map_Q, noise_map_U] )
+                if fg_gaussian:
+                    fg_map_T=flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['T'])
+                    fg_map_Q=flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['P'])
+                    fg_map_U=flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['P'])
+                    fg_map=np.asarray( [fg_map_T, fg_map_Q, fg_map_U] )
+                else:
+                    fg_map = np.zeros_like(noise_map)
             
-        sim_map=cmb_map + noise_map + fg_map
-        sim_arr.append( sim_map )
-    sim_dic[sim_type]['sims'][simcntr]=np.asarray( sim_arr )
-########################
+            if do_lensing:
+                cmb_map_lensed=[]
+                for tqu in range(tqulen):
+                    unlensed_cmb=np.copy( cmb_map[tqu] )
+                    lensed_cmb=lensing.perform_lensing(ra_grid_deg, dec_grid_deg, unlensed_cmb, kappa_arr[i], mapparams)
+                    if i == 0 and debug:
+                        subplot(1,tqulen,tqu+1); imshow(lensed_cmb - unlensed_cmb, extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Sim=%s: %s' %(i, tqu_tit_arr[tqu])); 
+                        axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); 
+                        if tqu == 0:
+                            ylabel(r'Y [arcmins]')
+                    cmb_map_lensed.append( lensed_cmb )
+                if i == 0 and debug:
+                    show()
+                cmb_map=np.asarray(cmb_map_lensed)
+                
+            sim_map=cmb_map+noise_map+fg_map
+            sim_arr.append( sim_map )
+            cmb_sim_arr.append( cmb_map )
+        sim_dic[sim_type]['sims'][simcntr]=np.asarray( sim_arr )
+        sim_dic[sim_type]['cmb_sims'][simcntr]=np.asarray( cmb_sim_arr )
 
-########################
-#get gradient information for all cluster cutouts
-print('\tget gradient information for all cluster cutouts')
-for sim_type in sim_dic:
-    sim_dic[sim_type]['cutouts_rotated'] = {}
-    sim_dic[sim_type]['grad_mag'] = {}
-    for simcntr in range( start, end ):
-        print('\t\tmock dataset %s of %s' %(simcntr+1, end-start))
-        sim_arr=sim_dic[sim_type]['sims'][simcntr]
-        nclustersorrandoms=len(sim_arr)
-        if apply_wiener_filter:
-            if pol:
-                cl_signal_arr=[cl[0], cl[1], cl[1]]
-                cl_noise_arr=[nl_dic['T'], nl_dic['P'], nl_dic['P']]
-            else:
-                cl_signal_arr=[cl[0]]
-                cl_noise_arr=[nl_dic['T']]
+    #get gradient information for all cluster cutouts
+    print('\t\tget gradient information for all cluster cutouts')
+    for sim_type in sim_dic:
+        sim_dic[sim_type]['cutouts_rotated'] = {}
+        sim_dic[sim_type]['grad_mag'] = {}
+        for simcntr in range( totiters_for_model ):
+            print('\t\t\tmodel dataset %s of %s' %(simcntr+1, totiters_for_model))
+            sim_arr=sim_dic[sim_type]['sims'][simcntr]
+            cmb_sim_arr=sim_dic[sim_type]['cmb_sims'][simcntr]
+            nclustersorrandoms=len(sim_arr)
+            if apply_wiener_filter:
+                if pol:
+                    cl_signal_arr=[cl[0], cl[1], cl[1]]
+                    cl_noise_arr=[nl_dic['T'], nl_dic['P'], nl_dic['P']]
+                else:
+                    cl_signal_arr=[cl[0]]
+                    cl_noise_arr=[nl_dic['T']]
 
-        #get median gradient direction and magnitude for all cluster cutouts + rotate them along median gradient direction.
-        ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, cutout_size_am)
-        
-        cutouts_rotated_arr=[]
-        grad_mag_arr=[]
-        for i in tqdm(range(nclustersorrandoms)):
-            tmp_grad_mag_arr=[]
-            tmp_cutouts_rotated=[]
-            for tqu in range(tqulen):
-                cutout_grad, grad_orientation, grad_mag=tools.get_gradient(sim_arr[i][tqu], mapparams=mapparams, apply_wiener_filter=apply_wiener_filter, cl_signal=cl_signal_arr[tqu], cl_noise=cl_noise_arr[tqu], lpf_gradient_filter=lpf_gradient_filter, cutout_size_am_for_grad=cutout_size_am_for_grad)
+            #get median gradient direction and magnitude for all cluster cutouts + rotate them along median gradient direction.
+            ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, cutout_size_am)
+            
+            cutouts_rotated_arr=[]
+            grad_mag_arr=[]
+            #for i in tqdm(range(nclustersorrandoms)):
+            for i in range(nclustersorrandoms):
+                tmp_grad_mag_arr=[]
+                tmp_cutouts_rotated=[]
+                for tqu in range(tqulen):
+                    cutout_grad, grad_orientation, grad_mag=tools.get_gradient(sim_arr[i][tqu], mapparams=mapparams, apply_wiener_filter=apply_wiener_filter, cl_signal=cl_signal_arr[tqu], cl_noise=cl_noise_arr[tqu], lpf_gradient_filter=lpf_gradient_filter, cutout_size_am_for_grad=cutout_size_am_for_grad)
 
-                cutout=sim_arr[i][tqu][ey1:ey2, ex1:ex2]
-                cutout_rotated=tools.rotate_cutout( cutout, np.median(grad_orientation) )
-                cutout_rotated=cutout_rotated - np.mean(cutout_rotated)
+                    #cutout=sim_arr[i][tqu][ey1:ey2, ex1:ex2]
+                    cutout=cmb_sim_arr[i][tqu][ey1:ey2, ex1:ex2]
+                    cutout_rotated=tools.rotate_cutout( cutout, np.median(grad_orientation) )
+                    cutout_rotated=cutout_rotated - np.mean(cutout_rotated)
 
-                tmp_cutouts_rotated.append( cutout_rotated )
-                tmp_grad_mag_arr.append( np.median(grad_mag) )
+                    tmp_cutouts_rotated.append( cutout_rotated )
+                    tmp_grad_mag_arr.append( np.median(grad_mag) )
 
-            grad_mag_arr.append( np.asarray(tmp_grad_mag_arr) )
-            cutouts_rotated_arr.append( np.asarray( tmp_cutouts_rotated ) )
+                grad_mag_arr.append( np.asarray(tmp_grad_mag_arr) )
+                cutouts_rotated_arr.append( np.asarray( tmp_cutouts_rotated ) )
 
-        grad_mag_arr=np.asarray(grad_mag_arr)
-        cutouts_rotated_arr=np.asarray(cutouts_rotated_arr)
-        #print(cutouts_rotated_arr[:, 0].shape)
-        #print(grad_mag_arr.shape)
-        
-        sim_dic[sim_type]['cutouts_rotated'][simcntr]=cutouts_rotated_arr
-        sim_dic[sim_type]['grad_mag'][simcntr]=grad_mag_arr    
+            grad_mag_arr=np.asarray(grad_mag_arr)
+            cutouts_rotated_arr=np.asarray(cutouts_rotated_arr)
+            #print(cutouts_rotated_arr[:, 0].shape)
+            #print(grad_mag_arr.shape)
+            
+            sim_dic[sim_type]['cutouts_rotated'][simcntr]=cutouts_rotated_arr
+            sim_dic[sim_type]['grad_mag'][simcntr]=grad_mag_arr    
 
-########################
+    #stack rotated cutouts + apply gradient magnitude weights
+    print('\t\tstack rotated cutouts + apply gradient magnitude weights')
+    model_dic = {}
+    for sim_type in sim_dic:
+        for simcntr in range( totiters_for_model ):
+            print('\t\t\tmodel dataset %s of %s' %(simcntr+1, totiters_for_model))
+            cutouts_rotated_arr=sim_dic[sim_type]['cutouts_rotated'][simcntr]
+            grad_mag_arr=sim_dic[sim_type]['grad_mag'][simcntr]
 
+            weighted_stack=np.sum( cutouts_rotated_arr[:, :] * grad_mag_arr[:, :, None, None], axis=0)
+            weights=np.sum( grad_mag_arr, axis=0)
+            stack=weighted_stack / weights[:, None, None]
+            #print(weighted_stack.shape, weights.shape)
+            model_dic[simcntr] = stack
 
-########################
-#stack rotated cutouts + apply gradient magnitude weights
-print('\tstack rotated cutouts + apply gradient magnitude weights')
-sim_dic[sim_type]['stack'] = {}
-for sim_type in sim_dic:
-    for simcntr in range( start, end ):
-        print('\t\tmock dataset %s of %s' %(simcntr+1, end-start))
-        cutouts_rotated_arr=sim_dic[sim_type]['cutouts_rotated'][simcntr]
-        grad_mag_arr=sim_dic[sim_type]['grad_mag'][simcntr]
-
-        weighted_stack=np.sum( cutouts_rotated_arr[:, :] * grad_mag_arr[:, :, None, None], axis=0)
-        weights=np.sum( grad_mag_arr, axis=0)
-        stack=weighted_stack / weights[:, None, None]
-        #print(weighted_stack.shape, weights.shape)
-        sim_dic[sim_type]['stack'][simcntr]=stack
-
+    op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = pol, models = True)
+    extrastr = '_randomseed%s_mass%.3f_z%.3f' %(random_seed_for_models, keyname[0], keyname[1])
+    op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, totiters_for_model, extrastr = extrastr)
+    np.save(op_fname, model_dic)
+    logline = '\t\tResults dumped in %s' %(op_fname)
+    print(logline)
+sys.exit()
 ########################
 
 ########################
