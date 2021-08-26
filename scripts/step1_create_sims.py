@@ -71,6 +71,16 @@ try:
 except:
     fg_gaussian = False
 
+try:
+    add_cluster_tsz=param_dict['add_cluster_tsz=True']
+except:
+    add_cluster_tsz=False
+
+try:
+    add_cluster_tsz=param_dict['add_cluster_tsz=True']
+except:
+    add_cluster_tsz=False
+
 #CMB power spectrum
 cls_file = '%s/%s' %(param_dict['data_folder'], param_dict['cls_file'])
 
@@ -364,8 +374,14 @@ for sim_type in sim_dic:
 
 ########################
 #save results
+fg_str=''
 if fg_gaussian:
-    fg_str = 'with_gaussian_fg'
+    fg_str = 'withgaussianfg'
+if add_cluster_tsz:
+    fg_str = '%s_withclustertsz' %(fg_str)
+if add_cluster_ksz:
+    fg_str = '%s_withclusterksz' %(fg_str)
+fg_str = fg_str.strip('_')
 op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = pol, fg_str = fg_str)
 op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
 sim_dic[sim_type].pop('sims')
