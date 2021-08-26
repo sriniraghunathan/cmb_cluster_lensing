@@ -21,7 +21,7 @@ print('\n')
 
 ########################
 parser = argparse.ArgumentParser(description='')
-parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/T/clusters_700objects_25sims0to25.npy')
+parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/with_gaussian_fg/T/clusters_700objects_25sims0to25.npy')
 
 
 args = parser.parse_args()
