@@ -39,20 +39,26 @@ def get_param_dict(paramfile):
 ################################################################################################################
 ################################################################################################################
 
-def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = False):
+def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = False, models = False):
     op_folder = '%s/nx%s_dx%s/beam%s/noise%s/%samcutouts/' %(results_folder, nx, dx, beamval, noiseval, cutout_size_am)
     if pol:
         op_folder = '%s/TQU/' %(op_folder)
     else:
         op_folder = '%s/T/' %(op_folder)
+    if models:
+        op_folder = '%s/models/' %(op_folder)
     if not os.path.exists(op_folder): os.system('mkdir -p %s' %(op_folder))
     return op_folder
 
 ################################################################################################################
 ################################################################################################################
 
-def get_op_fname(op_folder, sim_type, nclustersorrandoms, total_sims, start, end):
-    return '%s/%s_%sobjects_%ssims%sto%s.npy' %(op_folder, sim_type, nclustersorrandoms, total_sims, start, end)
+def get_op_fname(op_folder, sim_type, nclustersorrandoms, total_sims, start = -1, end = -1, extrastr = ''):
+    if start != -1 and end != -1:
+        fname = '%s/%s_%sobjects_%ssims%sto%s%s.npy' %(op_folder, sim_type, nclustersorrandoms, total_sims, start, end, extrastr)
+    else:
+        fname = '%s/%s_%sobjects_%ssims%s.npy' %(op_folder, sim_type, nclustersorrandoms, total_sims, extrastr)
+    return fname
 
 ################################################################################################################
 ################################################################################################################

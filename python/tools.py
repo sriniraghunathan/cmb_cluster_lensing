@@ -244,7 +244,7 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights = None, only_T = Fals
     for jkcnt, n in enumerate( simarr ):
         stacked_cutouts_for_jk_cov[:, n] = stacked_cutouts_for_jk_cov[:, n] - mean
     '''
-    print(stacked_cutouts_for_jk_cov.shape)
+    #print(stacked_cutouts_for_jk_cov.shape)
     jk_cov = (howmany_jk_samples - 1) * np.cov(stacked_cutouts_for_jk_cov)    
 
 
@@ -252,3 +252,77 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights = None, only_T = Fals
 
 ################################################################################################################
 ################################################################################################################
+
+def get_lnlikelihood(data, model, cov):
+
+    """
+    function to calculate the likelihood given data, model, covariance matrix
+    """
+
+    cov = np.mat(cov)
+    cov_inv = sc.linalg.pinv2(cov)
+
+    sign, logdetval = np.linalg.slogdet(cov)
+    logdetval = logdetval * sign
+
+    d = data.flatten()## - np.mean(MAP.flatten())
+    m = model.flatten()## - np.mean(MODEL.flatten())
+    d = d-m
+
+    logLval =  -0.5 * np.asarray( np.dot(d.T, np.dot( cov_inv, d ))).squeeze()
+
+    return logLval
+
+def fitting_func_gaussian(p, p0, X, DATA = None, return_fit = 0):
+    import scipy.special
+    fitfunc = lambda p, x: p[1]*(np.exp(-(x-p[2])**2/(2*p[3]**2)))
+    if not return_fit:
+        return fitfunc(p, X) - DATA
+    else:
+        return fitfunc(p, X)
+
+def likelihood_finer_resol(M, L, intrp_type = 2):
+
+    import scipy.optimize as optimize
+
+    deltaM = np.diff(M)[0]
+    M_ip = np.arange(min(M),max(M),deltaM/100.)
+
+    if intrp_type == 2: #Guassian fitting
+        #first guess a good parameter
+        Mfit = M[np.argmax(L)]
+        gau_width = abs(Mfit - M[np.argmin(abs(L))])#/2.35 * 2.
+        p0 = [0.,np.max(L),Mfit,gau_width]
+        p1, success = optimize.leastsq(fitting_func_gaussian, p0, args=(p0, M, L))
+
+        L_ip = fitting_func_gaussian(p1, p1, M_ip, return_fit = 1)
+
+    return M_ip, L_ip
+
+def lnlike_to_like(M, lnlike, intrp_type = 0):
+
+    lnlike = lnlike - max(lnlike)
+
+    '''
+    if intrp_type == 1:
+        deltaM = np.diff(M)[0]
+        M_ip = np.arange(min(M),max(M),deltaM/100.)
+        lnlike_ip = np.interp(M_ip, M, lnlike)
+        M = np.copy(M_ip)
+        lnlike = np.copy(lnlike_ip)
+    '''
+
+    delta_chisq = max(lnlike) - lnlike[0]
+    snr = np.sqrt(2 * delta_chisq)
+
+    L = np.exp(lnlike); L/=max(L)
+    recov_mass = M[np.argmax(L)]
+
+    if intrp_type <= 1: #no interpolation
+        return M, L, recov_mass, snr
+
+    M_ip, L_ip = likelihood_finer_resol(M, L, intrp_type = intrp_type)
+    L_ip /= max(L_ip)
+    recov_mass = M_ip[np.argmax(L_ip)]
+
+    return M_ip, L_ip, recov_mass, snr
