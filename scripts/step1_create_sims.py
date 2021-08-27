@@ -258,10 +258,10 @@ for simcntr in range( start, end ):
         if sim_type == 'clusters' and tqu == 0:
             if add_cluster_ksz: #ksz
                 ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
-                sim_map[tqu, ey1:ey2, ex1:ex2]=mdpl2_ksz_cutouts[i]        
+                sim_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_ksz_cutouts[i]        
             if add_cluster_tsz: #tsz
                 ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
-                sim_map[tqu, ey1:ey2, ex1:ex2]=mdpl2_tsz_cutouts[i]
+                sim_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_tsz_cutouts[i]
 
         sim_arr.append( sim_map )
     sim_dic[sim_type]['sims'][simcntr]=np.asarray( sim_arr )
@@ -371,7 +371,6 @@ for sim_type in sim_dic:
 
         stack = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
         sim_dic[sim_type]['stack'][simcntr]=stack
-
 ########################
 
 ########################
