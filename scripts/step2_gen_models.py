@@ -254,32 +254,7 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
                     cl_noise_arr=[nl_dic['T']]
 
             #get median gradient direction and magnitude for all cluster cutouts + rotate them along median gradient direction.
-            ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, cutout_size_am)
-            
-            cutouts_rotated_arr=[]
-            grad_mag_arr=[]
-            #for i in tqdm(range(nclustersorrandoms)):
-            for i in range(nclustersorrandoms):
-                tmp_grad_mag_arr=[]
-                tmp_cutouts_rotated=[]
-                for tqu in range(tqulen):
-                    cutout_grad, grad_orientation, grad_mag=tools.get_gradient(sim_arr[i][tqu], mapparams=mapparams, apply_wiener_filter=apply_wiener_filter, cl_signal=cl_signal_arr[tqu], cl_noise=cl_noise_arr[tqu], lpf_gradient_filter=lpf_gradient_filter, cutout_size_am_for_grad=cutout_size_am_for_grad)
-
-                    #cutout=sim_arr[i][tqu][ey1:ey2, ex1:ex2]
-                    cutout=cmb_sim_arr[i][tqu][ey1:ey2, ex1:ex2]
-                    cutout_rotated=tools.rotate_cutout( cutout, np.median(grad_orientation) )
-                    cutout_rotated=cutout_rotated - np.mean(cutout_rotated)
-
-                    tmp_cutouts_rotated.append( cutout_rotated )
-                    tmp_grad_mag_arr.append( np.median(grad_mag) )
-
-                grad_mag_arr.append( np.asarray(tmp_grad_mag_arr) )
-                cutouts_rotated_arr.append( np.asarray( tmp_cutouts_rotated ) )
-
-            grad_mag_arr=np.asarray(grad_mag_arr)
-            cutouts_rotated_arr=np.asarray(cutouts_rotated_arr)
-            #print(cutouts_rotated_arr[:, 0].shape)
-            #print(grad_mag_arr.shape)
+            grad_mag_arr, cutouts_rotated_arr = tools.get_rotated_tqu_cutouts(sim_arr, nclustersorrandoms, tqulen, mapparams, cutout_size_am, apply_wiener_filter=apply_wiener_filter, cl_signal = cl_signal_arr, cl_noise = cl_noise_arr, lpf_gradient_filter = lpf_gradient_filter, cutout_size_am_for_grad = cutout_size_am_for_grad)
             
             sim_dic[sim_type]['cutouts_rotated'][simcntr]=cutouts_rotated_arr
             sim_dic[sim_type]['grad_mag'][simcntr]=grad_mag_arr    
@@ -293,9 +268,7 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
             cutouts_rotated_arr=sim_dic[sim_type]['cutouts_rotated'][simcntr]
             grad_mag_arr=sim_dic[sim_type]['grad_mag'][simcntr]
 
-            weighted_stack=np.sum( cutouts_rotated_arr[:, :] * grad_mag_arr[:, :, None, None], axis=0)
-            weights=np.sum( grad_mag_arr, axis=0)
-            stack=weighted_stack / weights[:, None, None]
+            stack = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
             #print(weighted_stack.shape, weights.shape)
             model_dic[simcntr] = stack
 
