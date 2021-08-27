@@ -144,9 +144,11 @@ if (0):
 ########################
 ########################
 #get likelihoods
-master_loglarr = []
-for simcntr in sorted(data_stack_dic):
-    for tqu in range(tqulen):
+tr, tc = tqulen, 1
+for tqu in range(tqulen):
+    master_loglarr = []
+    ax = subplot(tr, tc, tqu+1)
+    for simcntr in sorted(data_stack_dic):
         loglarr = []
         massarr = []
         data_vec = data_stack_dic[simcntr][tqu].flatten()
@@ -161,14 +163,19 @@ for simcntr in sorted(data_stack_dic):
         master_loglarr.append( loglarr )
         plot(massarr, larr, label = simcntr, lw = 0.5);
 
-combined_loglarr = np.sum(master_loglarr, axis = 0)
-massarr, combined_larr, combined_recov_mass, combined_snr = tools.lnlike_to_like(massarr, combined_loglarr)
-plot(massarr, combined_larr, lw = 1.5, color = 'black', label = r'Combined');
-legend(loc = 4, ncol = 4, fontsize = 8)
-xlabel(r'M$_{200m}$ [$10^{14}$M$_{\odot}$]', fontsize = 14)
-ylabel(r'Normalised $\mathcal{L}$', fontsize = 14)
-axvline(cluster_mass/1e14, ls = '-.', lw = 2.)
-title(r'%s clusters; $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$' %(total_clusters, noiseval))
+    combined_loglarr = np.sum(master_loglarr, axis = 0)
+    massarr, combined_larr, combined_recov_mass, combined_snr = tools.lnlike_to_like(massarr, combined_loglarr)
+    plot(massarr, combined_larr, lw = 1.5, color = 'black', label = r'Combined');
+    axvline(cluster_mass/1e14, ls = '-.', lw = 2.)
+    if tqu == 0:
+        if tqulen == 1:
+            legend(loc = 4, ncol = 4, fontsize = 8)
+        else:
+            legend(loc = 4, ncol = 8, fontsize = 6)
+    if tqu+1 == tqulen:
+        xlabel(r'M$_{200m}$ [$10^{14}$M$_{\odot}$]', fontsize = 14)
+    ylabel(r'Normalised $\mathcal{L}$', fontsize = 14)
+    title(r'%s clusters; $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$' %(total_clusters, noiseval))
 show(); 
 sys.exit()
 
