@@ -216,9 +216,15 @@ def get_rotated_tqu_cutouts(sim_arr, totobjects, tqulen, mapparams, cutout_size_
 
     return grad_mag_arr, cutouts_rotated_arr
 
-def stack_rotated_tqu_cutouts(cutouts, weights_for_cutouts=None):
+def stack_rotated_tqu_cutouts(cutouts, weights_for_cutouts=None, perform_random_rotation = False):
     if weights_for_cutouts is None:
         weights_for_cutouts=np.ones_like(cutouts)
+
+    if perform_random_rotation:
+        for i in range(len(cutouts)):
+            tqulen = len(cutouts[i])
+            for tqu in range(tqulen):
+                cutouts[i][tqu] = rotate_cutout(cutouts[i][tqu], np.random.random() * 360.)
 
     weighted_stack=np.sum( cutouts[:, :] * weights_for_cutouts[:, :, None, None], axis=0)
     weights=np.sum( weights_for_cutouts, axis=0)
