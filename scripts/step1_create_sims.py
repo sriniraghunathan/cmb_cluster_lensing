@@ -175,6 +175,7 @@ if debug:
 
 ########################
 if clusters_or_randoms == 'clusters':
+    print('\tgetting NFW convergence for lensing')
     #NFW lensing convergence
     ra_grid_deg, dec_grid_deg = ra_grid/60., dec_grid/60.
 
@@ -201,7 +202,18 @@ sim_dic[sim_type]={}
 sim_dic[sim_type]['sims'] = {}
 print('\tcreating %s %s simulations' %(nclustersorrandoms, sim_type))
 for simcntr in range( start, end ):
+
     print('\t\tmock dataset %s of %s' %(simcntr+1, end-start))
+
+    ########################
+    #pick different mdpl2 tsz/ksz for each iteration of the sim run
+    if sim_type == 'clusters' and (add_cluster_ksz or add_cluster_tsz):
+        print('\t\t\tgetting mdpl2 tsz/ksz for cluster correlated foregrounds')
+        mdpl2_dic, mdpl2_cutout_size_am = foregrounds.get_mdpl2_cluster_tsz_ksz(total_clusters, dx, return_tsz = add_cluster_tsz, return_ksz = add_cluster_ksz)
+        if add_cluster_ksz: mdpl2_ksz_cutouts = mdpl2_dic['ksz']
+        if add_cluster_tsz: mdpl2_tsz_cutouts = mdpl2_dic['tsz']
+    ########################
+
     sim_arr=[]
     for i in tqdm(range(nclustersorrandoms)):
         if not pol:
@@ -241,6 +253,16 @@ for simcntr in range( start, end ):
             cmb_map=np.asarray(cmb_map_lensed)
             
         sim_map=cmb_map + noise_map + fg_map
+
+        #add cluster correalted ksz/tsz from MDPL2 if requested for temperature
+        if sim_type == 'clusters' and tqu == 0:
+            if add_cluster_ksz: #ksz
+                ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
+                sim_map[tqu, ey1:ey2, ex1:ex2]=mdpl2_ksz_cutouts[i]        
+            if add_cluster_tsz: #tsz
+                ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
+                sim_map[tqu, ey1:ey2, ex1:ex2]=mdpl2_tsz_cutouts[i]
+
         sim_arr.append( sim_map )
     sim_dic[sim_type]['sims'][simcntr]=np.asarray( sim_arr )
 ########################
@@ -293,9 +315,13 @@ if debug: #get power spectrum of maps to ensure sims are fine
 
         plot(el, cl_theory[tqucntr], color=colorarr[tqucntr])#, label=r'CMB theory')
         plot(curr_el, curr_cl, color=colorarr[tqucntr], ls ='--')#, label=r'CMB map')
-        plot(el, nl[tqucntr], color=colorarr_noise[tqucntr])#, label=r'Noise theory')
+        if tqucntr == 0: 
+            TP = 'T' 
+        else: 
+            TP = 'P'
+        plot(el, nl_dic[TP], color=colorarr_noise[tqucntr])#, label=r'Noise theory')
         plot(curr_el, curr_nl, color=colorarr_noise[tqucntr], ls ='--')#, label=r'Noise map')
-        plot(el, cl_fg[tqucntr], color=colorarr_fg[tqucntr])
+        plot(el, cl_fg_dic[TP], color=colorarr_fg[tqucntr])
         plot(curr_el, curr_cl_fg, color=colorarr_fg[tqucntr], ls ='--')
 
     ylabel(r'$C_{\ell}$ [$\mu$K$^{2}$]')

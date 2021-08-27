@@ -1,6 +1,7 @@
-import numpy as np, os, flatsky
+import numpy as np, os, flatsky, tools
 import scipy as sc
 import scipy.ndimage as ndimage
+from pylab import *
 
 h, k_B, c=6.626e-34,1.38e-23, 3e8
 data_folder = '/Users/sraghunathan/Research/SPTPol/analysis/git/cmb_cluster_lensing/python/data/'
@@ -99,3 +100,92 @@ def get_foreground_power_spt(component, freq1=150, freq2=None, units='uk', lmax 
         spec = spec[:lmax]
 
     return el, spec
+
+def coth(x):
+    return (np.exp(x) + np.exp(-x)) / (np.exp(x) - np.exp(-x))
+
+def compton_y_to_delta_Tcmb(freq1, freq2 = None, Tcmb = 2.73):
+
+    """ad
+    c.f:  table 1, sec. 3 of arXiv: 1303.5081; 
+    table 8 of http://arxiv.org/pdf/1303.5070.pdf
+    no relativistic corrections included.
+    freq1, freq2 = frequencies in GHz to cover the bandpass
+    freq2 = None will force freq1 to be the centre frequency
+    """
+
+    if freq1<1e4: freq1 = freq1 * 1e9
+
+    if not freq2 is None:
+        if freq2<1e4: freq2 = freq2 * 1e9
+        freq = np.arange(freq1,freq2,delta_nu)
+    else:
+        freq = np.asarray([freq1])
+
+    x = (h * freq) / (k_B * Tcmb)
+    g_nu = x * coth(x/2.) - 4.
+
+    return Tcmb * np.mean(g_nu)
+
+def get_mdpl2_cluster_tsz_ksz(total, reqd_dx, return_tsz = True, return_ksz = True, freq = 150):
+
+    fname = '%s/foregrounds/mdpl2/mdpl2_cutouts_for_tszksz_clus_detection_M1.7e+14to2.3e+14_z0.6to0.8_15320haloes_boxsize10.0am_dx0.5am.npz' %(data_folder)
+    mdpl2_cutout_size_am = 10.
+    mdpl2_dx = 0.5 #arcmins
+    ds_fac = int(reqd_dx/mdpl2_dx)
+    cutouts_dic = np.load(fname, allow_pickle = 1, encoding= 'latin1')['arr_0'].item()
+    #print(cutouts_dic.keys()) #(mass_bin_centre in M500c in 10^14 solar mass units, redshift)
+
+    #mass_z_key = (2.0, 0.7)
+    mass_z_key = list(cutouts_dic.keys())[0]
+    cutouts = cutouts_dic[mass_z_key]
+
+    total_mdpl2 = len(cutouts)
+    rand_inds = np.random.choice(total_mdpl2, total, replace = total>total_mdpl2)
+
+    y_cutouts, ksz_cutouts = [], []
+    for kcntr, keyname in enumerate( cutouts ):
+        if kcntr not in rand_inds: continue
+        #print(keyname) #(ra, dec, redshift, M500c in 10^14 solar mass units)
+        curr_y = cutouts[keyname]['y']
+        curr_ksz = cutouts[keyname]['ksz']
+        if ds_fac != 1:
+            curr_y = tools.downsample_map(curr_y, ds_fac)
+            curr_ksz = tools.downsample_map(curr_ksz, ds_fac)
+        if (1): #rotate cutouts
+            curr_y = tools.rotate_cutout(curr_y, np.random.random() * 360.)
+            curr_ksz = tools.rotate_cutout(curr_ksz, np.random.random() * 360.)
+        y_cutouts.append( curr_y )
+        ksz_cutouts.append( curr_ksz )
+
+    y_cutouts = np.asarray(y_cutouts)
+    ksz_cutouts = np.asarray(ksz_cutouts)
+
+    tsz_scalefac = compton_y_to_delta_Tcmb(freq)
+    tsz_cutouts = np.copy(y_cutouts) * tsz_scalefac * 1e6
+    
+    mdpl2_dic = {}
+    if return_tsz:
+        mdpl2_dic['tsz'] = tsz_cutouts
+    if return_ksz:
+        mdpl2_dic['ksz'] = ksz_cutouts
+
+    if (0):
+        ksz_cutouts_abs = np.abs(ksz_cutouts)
+        stacked_y = np.mean(y_cutouts, axis = 0) #use compton_y_to_delta_Tcmb(freq*1e9, Tcmb = 2.73) to convert ymap into tSZ map at the desired frequency.
+        stacked_ksz = np.mean(ksz_cutouts, axis = 0)
+        stacked_ksz_abs = np.mean(ksz_cutouts_abs, axis = 0)
+        print(ksz_cutouts_abs.shape)
+
+        ny, nx = stacked_y.shape
+        #boxsize_am = 121. #arcmins
+        xmin = -nx*dx/2.
+        xmax = -xmin
+
+
+        subplot(131); imshow(stacked_y, extent = [xmin, xmax, xmin, xmax]); colorbar(); axhline(lw = 0.5); axvline(lw = 0.5); title(r'Compton-y')
+        subplot(132); imshow(stacked_ksz, extent = [xmin, xmax, xmin, xmax]); colorbar(); axhline(lw = 0.5); axvline(lw = 0.5); title(r'kSZ')
+        subplot(133); imshow(stacked_ksz_abs, extent = [xmin, xmax, xmin, xmax]); colorbar(); axhline(lw = 0.5); axvline(lw = 0.5); title(r'abs(kSZ)')
+        show(); sys.exit()
+
+    return mdpl2_dic, mdpl2_cutout_size_am

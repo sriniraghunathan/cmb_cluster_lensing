@@ -252,6 +252,15 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights = None, only_T = Fals
 
 ################################################################################################################
 ################################################################################################################
+def downsample_map(data, N=2): #from N.Whitehorn
+    from numpy import average, split
+    ''' original from N.WHitehorn
+    width = data.shape[0]
+    height= data.shape[1]
+    return average(split(average(split(data, width // N, axis=1), axis=-1), height // N, axis=1), axis=-1)
+    '''
+    height, width = data.shape
+    return average(split(average(split(data, width // N, axis=1), axis=-1), height // N, axis=1), axis=-1)
 
 def get_lnlikelihood(data, model, cov):
 
