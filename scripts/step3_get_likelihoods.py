@@ -51,8 +51,36 @@ tqu_tit_arr = ['T', 'Q', 'U']
 cutout_size_am = param_dict['cutout_size_am'] #arcmins
 x1, x2 = -cutout_size_am/2. * dx, cutout_size_am/2. *dx
 
+##########################################
+##########################################
 #read mock data
-data_stack_dic = data['clusters']['stack']
+try:
+    add_cluster_tsz = param_dict['add_cluster_tsz']
+except:
+    add_cluster_tsz = False
+if not add_cluster_tsz:
+    data_stack_dic = data['clusters']['stack']
+else: #handle tsz
+    #stack rotated cutouts + apply gradient magnitude weights
+    data_stack_dic = {}
+    totsims = len(data['clusters']['cutouts_rotated'])
+    for simcntr in range( totsims ):
+        cutouts_rotated_arr=data['clusters']['cutouts_rotated'][simcntr]
+        grad_mag_arr=data['clusters']['grad_mag'][simcntr]
+
+        stack = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
+
+        #estimate and remove tSZ from rotated stack
+        tsz_estimate = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr, perform_random_rotation = True)        
+        stack[0] -= tsz_estimate[0]
+        if (0):
+            subplot(131); imshow(stack[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
+            subplot(132); imshow(tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
+            subplot(133); imshow(stack[0] - tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); show(); sys.exit()
+
+        data_stack_dic[simcntr]=stack
+##########################################
+##########################################
 
 #get and read random stack
 fd = '/'.join( dataset_fname.split('/')[:-1] )
@@ -63,12 +91,17 @@ random_stack = random_stack_dic[0]
 
 #subtract background from data stack
 for keyname in data_stack_dic:
-    data_stack_dic[keyname] -= random_stack
     if (0):
+        tmp_stack = data_stack_dic[keyname]
+        tmp_stack_bg_sub = data_stack_dic[keyname] - random_stack
+        sbpl=1
         for tqu in range(len(data_stack_dic[keyname])):
-            subplot(1, tqulen, tqu+1); imshow(data_stack_dic[keyname][tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar()
+            subplot(tqulen, 3, sbpl); imshow(tmp_stack[tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); sbpl+=1
+            subplot(tqulen, 3, sbpl); imshow(random_stack[tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); sbpl+=1
+            subplot(tqulen, 3, sbpl); imshow(tmp_stack_bg_sub[tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); sbpl+=1
             title('%s' %(tqu_tit_arr[tqu]))
         show(); sys.exit()
+    data_stack_dic[keyname] -= random_stack
     #print(data_stack_dic[keyname].shape)
 
 #get models
