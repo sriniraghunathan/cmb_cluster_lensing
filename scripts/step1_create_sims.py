@@ -285,16 +285,17 @@ if debug: #just plot the last map
         subplot(144);imshow(sim_map[0], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB + Noise')
         axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); #ylabel(r'Y [arcmins]')
     else:
-        figure(figsize=(10,10))
-        subplots_adjust(hspace=0.2, wspace=0.1)
+        figure(figsize=(12,12))
+        subplots_adjust(hspace=0.3, wspace=0.1)
         for tqucntr in range(tqulen):
-            subplot(tqulen,4,(tqucntr*3)+1);imshow(cmb_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB: %s' %(tqu_tit_arr[tqucntr]))
+            tmp_sim_cntr=4 #cmb, noise, fg, total
+            subplot(tqulen,4,(tqucntr*tmp_sim_cntr)+1);imshow(cmb_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB: %s' %(tqu_tit_arr[tqucntr]))
             axhline(lw=1.); axvline(lw=1.); ylabel(r'Y [arcmins]')
-            subplot(tqulen,4,(tqucntr*3)+2);imshow(noise_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Noise: %s' %(tqu_tit_arr[tqucntr]))
+            subplot(tqulen,4,(tqucntr*tmp_sim_cntr)+2);imshow(noise_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Noise: %s' %(tqu_tit_arr[tqucntr]))
             axhline(lw=1.); axvline(lw=1.); #xlabel(r'X [arcmins]'); #ylabel(r'Y [arcmins]')
-            subplot(tqulen,4,(tqucntr*3)+3);imshow(fg_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Foregrounds: %s' %(tqu_tit_arr[tqucntr]))
+            subplot(tqulen,4,(tqucntr*tmp_sim_cntr)+3);imshow(fg_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'Foregrounds: %s' %(tqu_tit_arr[tqucntr]))
             axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); #ylabel(r'Y [arcmins]')
-            subplot(tqulen,4,(tqucntr*3)+3);imshow(sim_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB + Noise: %s' %(tqu_tit_arr[tqucntr]))
+            subplot(tqulen,4,(tqucntr*tmp_sim_cntr)+4);imshow(sim_map[tqucntr], extent=[x1,x2,x1,x2], cmap=cmap); colorbar(); title(r'CMB + Noise: %s' %(tqu_tit_arr[tqucntr]))
             axhline(lw=1.); axvline(lw=1.); xlabel(r'X [arcmins]'); #ylabel(r'Y [arcmins]')
     show()
 
@@ -321,8 +322,9 @@ if debug: #get power spectrum of maps to ensure sims are fine
             TP = 'P'
         plot(el, nl_dic[TP], color=colorarr_noise[tqucntr])#, label=r'Noise theory')
         plot(curr_el, curr_nl, color=colorarr_noise[tqucntr], ls ='--')#, label=r'Noise map')
-        plot(el, cl_fg_dic[TP], color=colorarr_fg[tqucntr])
-        plot(curr_el, curr_cl_fg, color=colorarr_fg[tqucntr], ls ='--')
+        if fg_gaussian:
+            plot(el, cl_fg_dic[TP], color=colorarr_fg[tqucntr])
+            plot(curr_el, curr_cl_fg, color=colorarr_fg[tqucntr], ls ='--')
 
     ylabel(r'$C_{\ell}$ [$\mu$K$^{2}$]')
     xlabel(r'Multipole $\ell$')
