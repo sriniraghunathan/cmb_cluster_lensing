@@ -41,7 +41,7 @@ def get_nl_dic(noiseval, el, pol=False):
 
 #################################################################################
 
-def get_cl_fg(el=None, freq=150, pol=False, units='uk', lmax=None):
+def get_cl_fg(el=None, freq=150, pol=False, units='uk', pol_frac_cib = 0.02, pol_frac_radio = 0.03, lmax=None):
     el_fg_tmp, cl_fg_tmp=foregrounds.get_foreground_power_spt('all', freq1=150, freq2=None, units=units, lmax=lmax)
     if el is None:
         el=np.copy(el_fg_tmp)
@@ -53,10 +53,10 @@ def get_cl_fg(el=None, freq=150, pol=False, units='uk', lmax=None):
         el_fg, cl_dg_po=foregrounds.get_foreground_power_spt('DG-Po', freq1=150, freq2=None, units='uk', lmax=None)
         el_fg, cl_rg=foregrounds.get_foreground_power_spt('RG', freq1=150, freq2=None, units='uk', lmax=None)
         cl_dg=cl_dg_cl + cl_dg_po
-        cl_dg=cl_dg * param_dict['pol_frac_cib']
-        cl_rg=cl_rg * param_dict['pol_frac_cib']
+        cl_dg=cl_dg * pol_frac_cib
+        cl_rg=cl_rg * pol_frac_radio
         cl_fg_tmp=cl_dg + cl_rg
-        cl_fg_P=np.interp(el, el_fg_tmp, cl_fg_tmp)
+        cl_fg_pol=np.interp(el, el_fg_tmp, cl_fg_tmp)
         cl_fg_dic['P']=cl_fg_pol
     return cl_fg_dic
 

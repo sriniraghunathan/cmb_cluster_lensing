@@ -81,6 +81,16 @@ try:
 except:
     add_cluster_ksz=False
 
+try:
+    pol_frac_radio = param_dict['pol_frac_radio']
+except:
+    pol_frac_radio = False
+
+try:
+    pol_frac_cib = param_dict['pol_frac_cib']
+except:
+    pol_frac_cib = False
+
 #CMB power spectrum
 cls_file = '%s/%s' %(param_dict['data_folder'], param_dict['cls_file'])
 
@@ -150,7 +160,7 @@ print('\tkeys in nl_dict = %s' %(str(nl_dic.keys())))
 ########################
 #get foreground spectra if requested
 if fg_gaussian:
-    cl_fg_dic = tools.get_cl_fg(el = el, freq = 150, pol = pol)
+    cl_fg_dic = tools.get_cl_fg(el = el, freq = 150, pol = pol, pol_frac_cib = pol_frac_cib, pol_frac_radio = pol_frac_radio)
 ########################
 
 ########################
