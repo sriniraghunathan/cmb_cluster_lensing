@@ -122,13 +122,15 @@ bg_model_keyname = (0., 0.7)
 for model_keyname in model_dic:
     if model_keyname == bg_model_keyname: continue
     model_dic[model_keyname] -= model_dic[bg_model_keyname]
-    if (0):
+    if model_keyname[0]>0.8:#(1):
         for tqu in range(len(model_dic[model_keyname])):
-            subplot(1, tqulen, tqu+1); imshow(model_dic[model_keyname][tqu], cmap=cmap, extent = [x1, x2, x1, x2], vmin = -2., vmax = 2.); 
+            vmin, vmax = -2., 2.
+            vmin, vmax = None, None
+            subplot(1, tqulen, tqu+1); imshow(model_dic[model_keyname][tqu], cmap=cmap, extent = [x1, x2, x1, x2], vmin = vmin, vmax = vmax); 
             colorbar()
             title('(%s, %s): %s' %(model_keyname[0], model_keyname[1], tqu_tit_arr[tqu]))
             axhline(lw = 0.5); axvline(lw = 0.5)
-        show(); sys.exit()
+        show(); #sys.exit()
 
 if (1):
     #params or supply a params file

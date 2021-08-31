@@ -184,7 +184,7 @@ def dl_to_cl(el, cl_or_dl, inverse=0):
 ################################################################################################################
 #operations on cutouts
 
-def get_rotated_tqu_cutouts(sim_arr, totobjects, tqulen, mapparams, cutout_size_am, apply_wiener_filter=True, cl_signal=None, cl_noise=None, lpf_gradient_filter=None, cutout_size_am_for_grad=6.):
+def get_rotated_tqu_cutouts(sim_arr, sim_arr_for_grad_direction, totobjects, tqulen, mapparams, cutout_size_am, apply_wiener_filter=True, cl_signal=None, cl_noise=None, lpf_gradient_filter=None, cutout_size_am_for_grad=6.):
 
     """
     get median gradient direction and magnitude for all cluster cutouts + rotate them along median gradient direction.
@@ -199,11 +199,18 @@ def get_rotated_tqu_cutouts(sim_arr, totobjects, tqulen, mapparams, cutout_size_
         tmp_grad_mag_arr=[]
         tmp_cutouts_rotated=[]
         for tqu in range(tqulen):
-            cutout_grad, grad_orientation, grad_mag=get_gradient(sim_arr[i][tqu], mapparams=mapparams, apply_wiener_filter=apply_wiener_filter, cl_signal=cl_signal[tqu], cl_noise=cl_noise[tqu], lpf_gradient_filter=lpf_gradient_filter, cutout_size_am_for_grad=cutout_size_am_for_grad)
+            cutout_grad, grad_orientation, grad_mag=get_gradient(sim_arr_for_grad_direction[i][tqu], mapparams=mapparams, apply_wiener_filter=apply_wiener_filter, cl_signal=cl_signal[tqu], cl_noise=cl_noise[tqu], lpf_gradient_filter=lpf_gradient_filter, cutout_size_am_for_grad=cutout_size_am_for_grad)
 
             cutout=sim_arr[i][tqu][ey1:ey2, ex1:ex2]
-            cutout_rotated=rotate_cutout( cutout, np.median(grad_orientation) )
+            #cutout_rotated=rotate_cutout( cutout, np.median(grad_orientation) )
+            cutout_rotated=rotate_cutout( cutout, round(np.median(grad_orientation), 1) )
             cutout_rotated=cutout_rotated - np.mean(cutout_rotated)
+
+            '''
+            subplot(131);imshow(sim_arr_for_grad_direction[i][tqu][ey1:ey2, ex1:ex2]); colorbar();
+            subplot(132);imshow(sim_arr[i][tqu][ey1:ey2, ex1:ex2]); colorbar();
+            subplot(133);imshow(cutout_rotated); colorbar(); show(); sys.exit()
+            '''
 
             tmp_cutouts_rotated.append( cutout_rotated )
             tmp_grad_mag_arr.append( np.median(grad_mag) )

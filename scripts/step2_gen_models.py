@@ -214,6 +214,7 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
                     fg_map = np.zeros_like(noise_map)
             
             if do_lensing:
+                cmb_map_unlensed = np.copy(cmb_map)
                 cmb_map_lensed=[]
                 for tqu in range(tqulen):
                     unlensed_cmb=np.copy( cmb_map[tqu] )
@@ -228,9 +229,10 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
                     show()
                 cmb_map=np.asarray(cmb_map_lensed)
                 
-            sim_map=cmb_map+noise_map+fg_map
-            #for tqu in range(tqulen):#mean subtraction for T(/Q/U)
-            #    sim_map[tqu] -= np.mean(sim_map[tqu]) 
+            sim_map=np.copy(cmb_map)+noise_map+fg_map
+            for tqu in range(tqulen):#mean subtraction for T(/Q/U)
+                sim_map[tqu] -= np.mean(sim_map[tqu])
+                cmb_map[tqu] -= np.mean(cmb_map[tqu])
 
             sim_arr.append( sim_map )
             cmb_sim_arr.append( cmb_map )
@@ -256,7 +258,8 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
                     cl_noise_arr=[nl_dic['T']]
 
             #get median gradient direction and magnitude for all cluster cutouts + rotate them along median gradient direction.
-            grad_mag_arr, cutouts_rotated_arr = tools.get_rotated_tqu_cutouts(sim_arr, nclustersorrandoms, tqulen, mapparams, cutout_size_am, apply_wiener_filter=apply_wiener_filter, cl_signal = cl_signal_arr, cl_noise = cl_noise_arr, lpf_gradient_filter = lpf_gradient_filter, cutout_size_am_for_grad = cutout_size_am_for_grad)
+            #for models, we will obtain gradient directions using cmb+noise+fg while we will simply rotate cmb sims
+            grad_mag_arr, cutouts_rotated_arr = tools.get_rotated_tqu_cutouts(cmb_sim_arr, sim_arr, nclustersorrandoms, tqulen, mapparams, cutout_size_am, apply_wiener_filter=apply_wiener_filter, cl_signal = cl_signal_arr, cl_noise = cl_noise_arr, lpf_gradient_filter = lpf_gradient_filter, cutout_size_am_for_grad = cutout_size_am_for_grad)
             
             sim_dic[sim_type]['cutouts_rotated'][simcntr]=cutouts_rotated_arr
             sim_dic[sim_type]['grad_mag'][simcntr]=grad_mag_arr    
@@ -270,9 +273,16 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
             cutouts_rotated_arr=sim_dic[sim_type]['cutouts_rotated'][simcntr]
             grad_mag_arr=sim_dic[sim_type]['grad_mag'][simcntr]
 
-            stack = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
+            stack=tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
             #print(weighted_stack.shape, weights.shape)
             model_dic[simcntr] = stack
+
+            if (0):
+                modelbgfname = '../results/nx120_dx1/beam1.2/noise5/10amcutouts/nogaussianfg/T/models/clusters_700objects_1sims_randomseed100_mass0.000_z0.700.npy'
+                modelbg = np.load(modelbgfname, allow_pickle = True).item()[0]
+                curr_model = stack - modelbg
+                imshow(curr_model[0]); colorbar(); show()
+                sys.exit()
 
     fg_str=''
     if fg_gaussian:
