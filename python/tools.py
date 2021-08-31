@@ -202,8 +202,8 @@ def get_rotated_tqu_cutouts(sim_arr, sim_arr_for_grad_direction, totobjects, tqu
             cutout_grad, grad_orientation, grad_mag=get_gradient(sim_arr_for_grad_direction[i][tqu], mapparams=mapparams, apply_wiener_filter=apply_wiener_filter, cl_signal=cl_signal[tqu], cl_noise=cl_noise[tqu], lpf_gradient_filter=lpf_gradient_filter, cutout_size_am_for_grad=cutout_size_am_for_grad)
 
             cutout=sim_arr[i][tqu][ey1:ey2, ex1:ex2]
-            #cutout_rotated=rotate_cutout( cutout, np.median(grad_orientation) )
-            cutout_rotated=rotate_cutout( cutout, round(np.median(grad_orientation), 1) )
+            cutout_rotated=rotate_cutout( cutout, np.median(grad_orientation) )
+            #cutout_rotated=rotate_cutout( cutout, round(np.median(grad_orientation), 1) )
             cutout_rotated=cutout_rotated - np.mean(cutout_rotated)
 
             '''
