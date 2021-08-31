@@ -172,7 +172,7 @@ if howmany_jk_samples<500:
     howmany_jk_samples = 500
 
 jk_cov=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, only_T=True)
-if (1):
+if (0):
     print(jk_cov.shape)
     clf(); imshow(jk_cov, cmap=cmap); colorbar(); show(); sys.exit()
 

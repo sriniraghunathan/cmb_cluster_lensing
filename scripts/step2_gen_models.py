@@ -229,7 +229,8 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
                 cmb_map=np.asarray(cmb_map_lensed)
                 
             sim_map=cmb_map+noise_map+fg_map
-            sim_map = sim_map - np.mean(sim_map, axis = (1,2)) #mean subtraction for T(/Q/U)
+            #for tqu in range(tqulen):#mean subtraction for T(/Q/U)
+            #    sim_map[tqu] -= np.mean(sim_map[tqu]) 
 
             sim_arr.append( sim_map )
             cmb_sim_arr.append( cmb_map )
