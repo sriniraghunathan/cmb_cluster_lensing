@@ -213,7 +213,6 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
                 else:
                     fg_map = np.zeros_like(noise_map)
             
-            if i == 0: print(cmb_map[0,10,10])
             if do_lensing:
                 cmb_map_lensed=[]
                 for tqu in range(tqulen):
@@ -230,6 +229,7 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
                 cmb_map=np.asarray(cmb_map_lensed)
                 
             sim_map=cmb_map+noise_map+fg_map
+            sim_map = sim_map - np.mean(sim_map, axis = 0)
             sim_arr.append( sim_map )
             cmb_sim_arr.append( cmb_map )
         sim_dic[sim_type]['sims'][simcntr]=np.asarray( sim_arr )

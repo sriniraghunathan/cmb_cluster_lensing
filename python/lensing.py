@@ -41,6 +41,7 @@ def perform_lensing(theta_x_grid_deg, theta_y_grid_deg, image, kappa, mapparams,
     mod_theta_y_grid = (theta_y_grid + def_y).flatten().real
 
     image_lensed = intrp.RectBivariateSpline( theta_y_grid[:,0], theta_x_grid[0,:], image, kx = poly_deg, ky = poly_deg).ev(mod_theta_y_grid, mod_theta_x_grid).reshape([ny,nx])
+    image_lensed = image_lensed - np.mean(image_lensed)
 
     return image_lensed
 

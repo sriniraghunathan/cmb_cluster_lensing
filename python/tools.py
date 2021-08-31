@@ -291,11 +291,10 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights=None, only_T=False):
         #subplot(5,5,n+1); imshow(stacked_cutouts_for_jk_cov[:, n].reshape(ny,nx), interpolation='bicubic', cmap=cm.RdYlBu); colorbar(); title(n); 
 
     #show(); #sys.exit()
-    '''
     mean=np.mean(stacked_cutouts_for_jk_cov, axis=1)
     for jkcnt, n in enumerate( simarr ):
         stacked_cutouts_for_jk_cov[:, n]=stacked_cutouts_for_jk_cov[:, n] - mean
-    '''
+
     #print(stacked_cutouts_for_jk_cov.shape)
     jk_cov=(howmany_jk_samples - 1) * np.cov(stacked_cutouts_for_jk_cov)    
 
