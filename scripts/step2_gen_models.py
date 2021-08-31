@@ -23,7 +23,7 @@ print('\n')
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/withgaussianfg/T/clusters_700objects_25sims0to25.npy')
 parser.add_argument('-minM', dest='minM', action='store', help='minM', type=float, default=0.)
-parser.add_argument('-maxM', dest='maxM', action='store', help='maxM', type=float, default=5.)
+parser.add_argument('-maxM', dest='maxM', action='store', help='maxM', type=float, default=4.)
 parser.add_argument('-delM', dest='delM', action='store', help='delM', type=float, default=0.1)
 parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=1)
 parser.add_argument('-random_seed_for_models', dest='random_seed_for_models', action='store', help='random_seed_for_models', type=int, default=100)
@@ -229,7 +229,8 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
                 cmb_map=np.asarray(cmb_map_lensed)
                 
             sim_map=cmb_map+noise_map+fg_map
-            sim_map = sim_map - np.mean(sim_map, axis = 0)
+            sim_map = sim_map - np.mean(sim_map, axis = (1,2)) #mean subtraction for T(/Q/U)
+
             sim_arr.append( sim_map )
             cmb_sim_arr.append( cmb_map )
         sim_dic[sim_type]['sims'][simcntr]=np.asarray( sim_arr )

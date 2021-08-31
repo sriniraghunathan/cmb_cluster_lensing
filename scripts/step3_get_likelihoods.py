@@ -128,7 +128,7 @@ for model_keyname in model_dic:
             colorbar()
             title('(%s, %s): %s' %(model_keyname[0], model_keyname[1], tqu_tit_arr[tqu]))
             axhline(lw = 0.5); axvline(lw = 0.5)
-        show(); 
+        show(); sys.exit()
 
 if (1):
     #params or supply a params file
@@ -139,8 +139,6 @@ if (1):
         fg_gaussian = param_dict['fg_gaussian'] #Gaussian realisation of all foregrounds
     except:
         fg_gaussian = False
-
-
 
     #sim stuffs
     total_clusters = param_dict['total_clusters']
@@ -166,13 +164,17 @@ if (0):
     show(); sys.exit()
 cluster_grad_mag_arr=data['clusters']['grad_mag'][dummysimcntr]
 
-if param_dict['howmany_jk_samples']<500:
-    param_dict['howmany_jk_samples'] = 500
+try:
+    howmany_jk_samples = param_dict['howmany_jk_samples']
+except:
+    howmany_jk_samples = 500
+if howmany_jk_samples<500:
+    howmany_jk_samples = 500
 
-jk_cov=tools.get_jk_covariance(cluster_cutouts_rotated_arr, param_dict['howmany_jk_samples'], weights=cluster_grad_mag_arr, only_T=True)
-if (0):
+jk_cov=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, only_T=True)
+if (1):
     print(jk_cov.shape)
-    clf(); imshow(jk_cov, cmap=cmap); colorbar(); show(); #sys.exit()
+    clf(); imshow(jk_cov, cmap=cmap); colorbar(); show(); sys.exit()
 
 ########################
 ########################

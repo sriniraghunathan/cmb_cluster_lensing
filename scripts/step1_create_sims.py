@@ -22,7 +22,7 @@ print('\n')
 ########################
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('-start', dest='start', action='store', help='start', type=int, default=0)
-parser.add_argument('-end', dest='end', action='store', help='end', type=int, default=25)
+parser.add_argument('-end', dest='end', action='store', help='end', type=int, default=10)
 parser.add_argument('-clusters_or_randoms', dest='clusters_or_randoms', action='store', help='clusters_or_randoms', type=str, default='clusters')
 
 args = parser.parse_args()
@@ -273,6 +273,7 @@ for simcntr in range( start, end ):
                 ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
                 sim_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_tsz_cutouts[i]
 
+        sim_map = sim_map - np.mean(sim_map, axis = (1,2)) #mean subtraction for T(/Q/U)
         sim_arr.append( sim_map )
     sim_dic[sim_type]['sims'][simcntr]=np.asarray( sim_arr )
 ########################
