@@ -184,7 +184,25 @@ def dl_to_cl(el, cl_or_dl, inverse=0):
 ################################################################################################################
 #operations on cutouts
 
-def get_rotated_tqu_cutouts(sim_arr, sim_arr_for_grad_direction, totobjects, tqulen, mapparams, cutout_size_am, apply_wiener_filter=True, cl_signal=None, cl_noise=None, lpf_gradient_filter=None, cutout_size_am_for_grad=6.):
+def get_rotated_tqu_cutouts_simple(sim_arr, grad_orientation_arr, totobjects, tqulen):
+
+    cutouts_rotated_arr=[]
+    for i in range(totobjects):
+        tmp_cutouts_rotated=[]
+        for tqu in range(tqulen):
+            cutout=sim_arr[i][tqu]
+            grad_orientation=grad_orientation_arr[i][tqu]            
+            cutout_rotated=rotate_cutout( cutout, grad_orientation )
+            cutout_rotated=cutout_rotated - np.mean(cutout_rotated)
+            tmp_cutouts_rotated.append( cutout_rotated )
+
+        cutouts_rotated_arr.append( np.asarray( tmp_cutouts_rotated ) )
+
+    cutouts_rotated_arr=np.asarray(cutouts_rotated_arr)
+
+    return cutouts_rotated_arr
+
+def get_rotated_tqu_cutouts(sim_arr, sim_arr_for_grad_direction, totobjects, tqulen, mapparams, cutout_size_am, perform_rotation = True, apply_wiener_filter=True, cl_signal=None, cl_noise=None, lpf_gradient_filter=None, cutout_size_am_for_grad=6.):
 
     """
     get median gradient direction and magnitude for all cluster cutouts + rotate them along median gradient direction.
@@ -194,16 +212,26 @@ def get_rotated_tqu_cutouts(sim_arr, sim_arr_for_grad_direction, totobjects, tqu
     
     cutouts_rotated_arr=[]
     grad_mag_arr=[]
+    grad_orien_arr=[]
     #for i in tqdm(range(totobjects)):
     for i in range(totobjects):
         tmp_grad_mag_arr=[]
         tmp_cutouts_rotated=[]
+        tmp_grad_orien_arr=[]
         for tqu in range(tqulen):
             cutout_grad, grad_orientation, grad_mag=get_gradient(sim_arr_for_grad_direction[i][tqu], mapparams=mapparams, apply_wiener_filter=apply_wiener_filter, cl_signal=cl_signal[tqu], cl_noise=cl_noise[tqu], lpf_gradient_filter=lpf_gradient_filter, cutout_size_am_for_grad=cutout_size_am_for_grad)
 
             cutout=sim_arr[i][tqu][ey1:ey2, ex1:ex2]
-            cutout_rotated=rotate_cutout( cutout, np.median(grad_orientation) )
-            #cutout_rotated=rotate_cutout( cutout, round(np.median(grad_orientation), 1) )
+            median_grad_mag = np.median(grad_mag)
+            median_grad_orientation = np.median(grad_orientation)
+            if (0):
+                median_grad_orientation = round(median_grad_orientation, 1)
+                median_grad_mag = round(median_grad_mag, 1)
+
+            if perform_rotation:
+                cutout_rotated=rotate_cutout( cutout, median_grad_orientation )
+            else:
+                cutout_rotated = np.copy( cutout )
             cutout_rotated=cutout_rotated - np.mean(cutout_rotated)
 
             '''
@@ -213,15 +241,18 @@ def get_rotated_tqu_cutouts(sim_arr, sim_arr_for_grad_direction, totobjects, tqu
             '''
 
             tmp_cutouts_rotated.append( cutout_rotated )
-            tmp_grad_mag_arr.append( np.median(grad_mag) )
+            tmp_grad_mag_arr.append( median_grad_mag )
+            tmp_grad_orien_arr.append( median_grad_orientation )
 
         grad_mag_arr.append( np.asarray(tmp_grad_mag_arr) )
         cutouts_rotated_arr.append( np.asarray( tmp_cutouts_rotated ) )
+        grad_orien_arr.append( np.asarray( tmp_grad_orien_arr ) )
 
     grad_mag_arr=np.asarray(grad_mag_arr)
+    grad_orien_arr=np.asarray(grad_orien_arr)
     cutouts_rotated_arr=np.asarray(cutouts_rotated_arr)
 
-    return grad_mag_arr, cutouts_rotated_arr
+    return grad_mag_arr, grad_orien_arr, cutouts_rotated_arr
 
 def stack_rotated_tqu_cutouts(cutouts, weights_for_cutouts=None, perform_random_rotation = False):
     if weights_for_cutouts is None:
@@ -393,3 +424,26 @@ def lnlike_to_like(M, lnlike, intrp_type=0):
     recov_mass=M_ip[np.argmax(L_ip)]
 
     return M_ip, L_ip, recov_mass, snr
+
+def random_sampler(x, y, howmanysamples = 100000, burn_in = 5000):
+    import scipy.integrate as integrate
+    import scipy.interpolate as interpolate
+
+    norm = integrate.simps(y, x) #area under curve for norm
+    y = y/norm #normalise dn/dM here
+
+    cdf = np.asarray([integrate.simps(y[:i+1], x[:i+1]) for i in range(len(x))])
+    cdf_inv = interpolate.interp1d(cdf, x)
+
+    random_sample = cdf_inv(np.random.rand(howmanysamples))
+
+    return random_sample[burn_in:]  
+
+def get_width_from_sampling(x, likelihood_curve):#, sigma_value = [1.]):
+    randoms = random_sampler(x, likelihood_curve)
+    mean_mass = x[np.argmax(likelihood_curve)]
+    low_err = mean_mass - np.percentile(randoms, 16.)
+    high_err = np.percentile(randoms, 84.) - mean_mass
+
+    return mean_mass, low_err, high_err
+

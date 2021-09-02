@@ -21,7 +21,7 @@ print('\n')
 
 ########################
 parser = argparse.ArgumentParser(description='')
-parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/withgaussianfg/T/clusters_700objects_25sims0to25.npy')
+parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/nogaussianfg/T/clusters_700objects_10sims0to10.npy')
 parser.add_argument('-minM', dest='minM', action='store', help='minM', type=float, default=0.)
 parser.add_argument('-maxM', dest='maxM', action='store', help='maxM', type=float, default=4.)
 parser.add_argument('-delM', dest='delM', action='store', help='delM', type=float, default=0.1)
@@ -244,6 +244,7 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
     for sim_type in sim_dic:
         sim_dic[sim_type]['cutouts_rotated'] = {}
         sim_dic[sim_type]['grad_mag'] = {}
+        sim_dic[sim_type]['grad_orien'] = {}
         for simcntr in range( totiters_for_model ):
             print('\t\t\tmodel dataset %s of %s' %(simcntr+1, totiters_for_model))
             sim_arr=sim_dic[sim_type]['sims'][simcntr]
@@ -259,29 +260,36 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
 
             #get median gradient direction and magnitude for all cluster cutouts + rotate them along median gradient direction.
             #for models, we will obtain gradient directions using cmb+noise+fg while we will simply rotate cmb sims
-            grad_mag_arr, cutouts_rotated_arr = tools.get_rotated_tqu_cutouts(cmb_sim_arr, sim_arr, nclustersorrandoms, tqulen, mapparams, cutout_size_am, apply_wiener_filter=apply_wiener_filter, cl_signal = cl_signal_arr, cl_noise = cl_noise_arr, lpf_gradient_filter = lpf_gradient_filter, cutout_size_am_for_grad = cutout_size_am_for_grad)
-            
+            grad_mag_arr, grad_orien_arr, cutouts_rotated_arr = tools.get_rotated_tqu_cutouts(cmb_sim_arr, sim_arr, nclustersorrandoms, tqulen, mapparams, cutout_size_am, perform_rotation = False, apply_wiener_filter=apply_wiener_filter, cl_signal = cl_signal_arr, cl_noise = cl_noise_arr, lpf_gradient_filter = lpf_gradient_filter, cutout_size_am_for_grad = cutout_size_am_for_grad)
+
             sim_dic[sim_type]['cutouts_rotated'][simcntr]=cutouts_rotated_arr
-            sim_dic[sim_type]['grad_mag'][simcntr]=grad_mag_arr    
+            sim_dic[sim_type]['grad_mag'][simcntr]=grad_mag_arr
+            sim_dic[sim_type]['grad_orien'][simcntr]=grad_orien_arr
 
     #stack rotated cutouts + apply gradient magnitude weights
     print('\t\tstack rotated cutouts + apply gradient magnitude weights')
     model_dic = {}
     for sim_type in sim_dic:
+        model_dic[simcntr] = {}
         for simcntr in range( totiters_for_model ):
             print('\t\t\tmodel dataset %s of %s' %(simcntr+1, totiters_for_model))
             cutouts_rotated_arr=sim_dic[sim_type]['cutouts_rotated'][simcntr]
             grad_mag_arr=sim_dic[sim_type]['grad_mag'][simcntr]
+            grad_orien_arr=sim_dic[sim_type]['grad_orien'][simcntr]
 
             stack=tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
             #print(weighted_stack.shape, weights.shape)
-            model_dic[simcntr] = stack
+            model_dic[simcntr]['stack'] = stack
+            model_dic[simcntr]['cutouts'] = [cutouts_rotated_arr, grad_mag_arr, grad_orien_arr]
 
             if (0):
+                print(simcntr, sim_type, random_seed_for_models, keyname)
                 modelbgfname = '../results/nx120_dx1/beam1.2/noise5/10amcutouts/nogaussianfg/T/models/clusters_700objects_1sims_randomseed100_mass0.000_z0.700.npy'
                 modelbg = np.load(modelbgfname, allow_pickle = True).item()[0]
+                subplot(131);imshow(stack[0]); colorbar(); 
+                subplot(132);imshow(modelbg[0]); colorbar(); 
                 curr_model = stack - modelbg
-                imshow(curr_model[0]); colorbar(); show()
+                subplot(133);imshow(curr_model[0]); colorbar(); show()
                 sys.exit()
 
     fg_str=''

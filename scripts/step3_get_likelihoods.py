@@ -21,7 +21,7 @@ print('\n')
 
 ########################
 parser = argparse.ArgumentParser(description='')
-parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/withgaussianfg/T/clusters_700objects_25sims0to25.npy')
+parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/nogaussianfg/T/clusters_700objects_10sims0to10.npy')
 
 
 args = parser.parse_args()
@@ -50,6 +50,8 @@ else:
 tqu_tit_arr = ['T', 'Q', 'U']
 cutout_size_am = param_dict['cutout_size_am'] #arcmins
 x1, x2 = -cutout_size_am/2. * dx, cutout_size_am/2. *dx
+#sim stuffs
+total_clusters = param_dict['total_clusters']
 
 ##########################################
 ##########################################
@@ -104,25 +106,70 @@ for keyname in data_stack_dic:
     data_stack_dic[keyname] -= random_stack
     #print(data_stack_dic[keyname].shape)
 
+##########################################
+##########################################
+
 #get models
 model_fd = '%s/models/' %(fd)
 model_flist = sorted( glob.glob('%s/*.npy' %(model_fd)) )
-model_dic = {}
-for model_fname in model_flist:
-    model_data = np.load(model_fname, allow_pickle=True).item()
-    model_arr = np.asarray( list(model_data.values()) )
-    model = np.mean(model_arr, axis = 0)
+
+def get_model_keyname(model_fname):
     model_keyname_tmp = '_'.join(model_fname.split('_')[-2:]).replace('mass', '').replace('z','').replace('.npy','').split('_')
     model_mass, model_z = float(model_keyname_tmp[0]), float(model_keyname_tmp[1])
     model_keyname = ( round(model_mass, 3), round(model_z, 3) )
+    return model_keyname   
+
+#get gradient orientation first for each cluster in each (M,z) for each sim.
+#next for every cluster we will get the median grad orientation across all (M,z) for each sim.
+#this ensures that we rotate a given cluster lensed by all (M,z) by the same angle. Otherwise, there likelihoods can be shaky.
+tmp_model_orien_dic = {}
+for model_fname in model_flist:
+    model_data = np.load(model_fname, allow_pickle=True).item()
+    for simkeyname in model_data:
+        if simkeyname not in tmp_model_orien_dic:
+            tmp_model_orien_dic[simkeyname] = []
+        cutouts_rotated_arr, grad_mag_arr, grad_orien_arr = model_data[simkeyname]['cutouts']
+        tmp_model_orien_dic[simkeyname].append(grad_orien_arr)
+
+#final gradient orientation is obtained in this step
+model_orien_dic = {}
+for simkeyname in tmp_model_orien_dic:
+    model_orien_dic[simkeyname] = []
+    grad_orien_arr = np.asarray( tmp_model_orien_dic[simkeyname] ) #vector with dimensions total_models x total_clusters x tqulen
+    model_orien_dic[simkeyname] = np.mean(grad_orien_arr, axis = 0) #vector with dimensions total_clusters x tqulen
+
+#models are computed here by rotating each cluster along the orientations estimated above
+model_dic = {}
+for model_fname in model_flist:
+    model_data = np.load(model_fname, allow_pickle=True).item()
+    '''
+    #model_arr = np.asarray( list(model_data.values()) )
+    model_arr = []
+    for simkeyname in model_data:
+        model_arr.append(model_data[simkeyname]['stack'])
+    '''
+    model_arr = []
+    for simkeyname in model_data:
+        cutouts_arr, grad_mag_arr, grad_orien_arr = model_data[simkeyname]['cutouts']
+        grad_orien_arr_avg = model_orien_dic[simkeyname]
+
+        cutouts_rotated_arr = tools.get_rotated_tqu_cutouts_simple(cutouts_arr, grad_orien_arr_avg, total_clusters, tqulen)
+        stack=tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
+        model_arr.append( stack )
+
+    model = np.mean(model_arr, axis = 0)
+    model_keyname = get_model_keyname(model_fname)
     model_dic[model_keyname] = model
+
+##########################################
+##########################################
 
 #subtract M=0 from all
 bg_model_keyname = (0., 0.7)
 for model_keyname in model_dic:
     if model_keyname == bg_model_keyname: continue
     model_dic[model_keyname] -= model_dic[bg_model_keyname]
-    if model_keyname[0]>0.8:#(1):
+    if (0):#model_keyname[0]>0.8 and model_keyname[0]<1.2:#(1):
         for tqu in range(len(model_dic[model_keyname])):
             vmin, vmax = -2., 2.
             vmin, vmax = None, None
@@ -130,7 +177,11 @@ for model_keyname in model_dic:
             colorbar()
             title('(%s, %s): %s' %(model_keyname[0], model_keyname[1], tqu_tit_arr[tqu]))
             axhline(lw = 0.5); axvline(lw = 0.5)
-        show(); #sys.exit()
+        show(); 
+#sys.exit()
+
+##########################################
+##########################################
 
 if (1):
     #params or supply a params file
@@ -141,9 +192,6 @@ if (1):
         fg_gaussian = param_dict['fg_gaussian'] #Gaussian realisation of all foregrounds
     except:
         fg_gaussian = False
-
-    #sim stuffs
-    total_clusters = param_dict['total_clusters']
 
     #cluster info
     cluster_mass = param_dict['cluster_mass']
@@ -202,7 +250,9 @@ for tqu in range(tqulen):
 
     combined_loglarr = np.sum(master_loglarr, axis = 0)
     massarr, combined_larr, combined_recov_mass, combined_snr = tools.lnlike_to_like(massarr, combined_loglarr)
-    plot(massarr, combined_larr, lw = 1.5, color = 'black', label = r'Combined');
+    combined_mean_mass, combined_mean_mass_low_err, combined_mean_mass_high_err = tools.get_width_from_sampling(massarr, combined_larr)
+    combined_mean_mass_err = (combined_mean_mass_low_err + combined_mean_mass_high_err)/2.
+    plot(massarr, combined_larr, lw = 1.5, color = 'black', label = r'Combined: %.2f $\pm$ %.2f' %(combined_mean_mass, combined_mean_mass_err));
     axvline(cluster_mass/1e14, ls = '-.', lw = 2.)
     if tqu == 0:
         if tqulen == 1:

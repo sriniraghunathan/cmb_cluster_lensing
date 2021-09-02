@@ -363,7 +363,7 @@ for sim_type in sim_dic:
                 cl_noise_arr=[nl_dic['T']]
 
         #get median gradient direction and magnitude for all cluster cutouts + rotate them along median gradient direction.
-        grad_mag_arr, cutouts_rotated_arr = tools.get_rotated_tqu_cutouts(sim_arr, sim_arr, nclustersorrandoms, tqulen, mapparams, cutout_size_am, apply_wiener_filter=apply_wiener_filter, cl_signal = cl_signal_arr, cl_noise = cl_noise_arr, lpf_gradient_filter = lpf_gradient_filter, cutout_size_am_for_grad = cutout_size_am_for_grad)
+        grad_mag_arr, grad_orien_arr, cutouts_rotated_arr = tools.get_rotated_tqu_cutouts(sim_arr, sim_arr, nclustersorrandoms, tqulen, mapparams, cutout_size_am, apply_wiener_filter=apply_wiener_filter, cl_signal = cl_signal_arr, cl_noise = cl_noise_arr, lpf_gradient_filter = lpf_gradient_filter, cutout_size_am_for_grad = cutout_size_am_for_grad)
         
         sim_dic[sim_type]['cutouts_rotated'][simcntr]=cutouts_rotated_arr
         sim_dic[sim_type]['grad_mag'][simcntr]=grad_mag_arr    
