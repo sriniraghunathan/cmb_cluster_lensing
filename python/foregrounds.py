@@ -142,7 +142,7 @@ def get_mdpl2_cluster_tsz_ksz(total, reqd_dx, return_tsz = True, return_ksz = Tr
 
     total_mdpl2 = len(cutouts)
     rand_inds = np.random.choice(total_mdpl2, total, replace = total>total_mdpl2)
-
+    
     y_cutouts, ksz_cutouts = [], []
     for kcntr, keyname in enumerate( cutouts ):
         if kcntr not in rand_inds: continue
@@ -189,3 +189,51 @@ def get_mdpl2_cluster_tsz_ksz(total, reqd_dx, return_tsz = True, return_ksz = Tr
         show(); sys.exit()
 
     return mdpl2_dic, mdpl2_cutout_size_am
+
+def tsz_beta_model_fitting_func(p, p0, radius, data = None, lbounds = None, ubounds = None, fixed = None, return_fit = 0):            
+    if hasattr(fixed, '__len__'):                
+        p[fixed] = p0[fixed]
+
+    if hasattr(lbounds, '__len__'):
+        lbounds = np.asarray(lbounds)
+        linds = abs(p)<abs(lbounds)
+        p[linds] = lbounds[linds]
+
+    if hasattr(ubounds, '__len__'):
+        ubounds = np.asarray(ubounds)
+        uinds = abs(p)>abs(ubounds)
+        p[uinds] = ubounds[uinds]
+
+    if not return_fit:
+        return np.ravel(fitfunc(p, radius) - data)
+    else:
+        return fitfunc(p, radius)
+
+def fit_fot_tsz(cutout, dx, cluster_rad_am = 1.5):
+    import scipy.optimize as optimize
+
+    ny, nx = cutout.shape
+    x1, x2 = -nx/2. * dx, nx/2. *dx
+    x = np.linspace(x1, x2, nx)
+    ra_grid, dec_grid = np.meshgrid(x, x)
+    radius_am = np.hypot(ra_grid, dec_grid)
+    inside_inds = np.where((radius_am<=cluster_rad_am))
+    ini_amp = np.mean( cutout[inside_inds] )
+
+    outside_inds = np.where((radius_am>=2*cluster_rad_am))
+    ini_bg = np.mean( cutout[outside_inds] )
+
+    ini_theta_core = 1. #arcmin
+    ini_beta_value = 1.
+
+    p0 = [ini_bg, ini_amp, ini_theta_core, ini_beta_value]
+    minamp, maxamp = ini_amp * 4., ini_amp * 0.5
+
+    lbounds = None#[ini_bg*0.5, minamp, .25, 0.8]
+    ubounds = None#[ini_bg*4., maxamp, 1.5, 1.3]
+
+    p1, success = optimize.leastsq(tsz_beta_model_fitting_func, p0[:], args=(p0, radius_am, cutout, lbounds, ubounds))
+    tsz_fit = fitfunc(p1, radius_am)
+    #print(p0, p1)
+
+    return tsz_fit

@@ -22,6 +22,7 @@ print('\n')
 ########################
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/nogaussianfg/T/clusters_700objects_10sims0to10.npy')
+parser.add_argument('-use_1d', dest='use_1d', action='store', help='use_1d', type=int, default=0)
 
 
 args = parser.parse_args()
@@ -49,17 +50,23 @@ else:
     tqulen = 3
 tqu_tit_arr = ['T', 'Q', 'U']
 cutout_size_am = param_dict['cutout_size_am'] #arcmins
-x1, x2 = -cutout_size_am/2. * dx, cutout_size_am/2. *dx
+ny = nx = int(cutout_size_am / dx)
+x1, x2 = -cutout_size_am/2., cutout_size_am/2.
 #sim stuffs
 total_clusters = param_dict['total_clusters']
 
 ##########################################
 ##########################################
-#read mock data
+#read mock data + remove tsz estimate if necessary
 try:
     add_cluster_tsz = param_dict['add_cluster_tsz']
 except:
     add_cluster_tsz = False
+try:
+    add_cluster_ksz = param_dict['add_cluster_ksz']
+except:
+    add_cluster_ksz = False
+
 if not add_cluster_tsz:
     data_stack_dic = data['clusters']['stack']
 else: #handle tsz
@@ -70,15 +77,34 @@ else: #handle tsz
         cutouts_rotated_arr=data['clusters']['cutouts_rotated'][simcntr]
         grad_mag_arr=data['clusters']['grad_mag'][simcntr]
 
-        stack = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
+        fitfunc = lambda p, radius: p[0] + p[1] * ( 1.0 + (radius/p[2]) ** 2. ) ** (0.5 - (1.5 * p[3]) )
+
+        ###stack = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
 
         #estimate and remove tSZ from rotated stack
-        tsz_estimate = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr, perform_random_rotation = True)        
-        stack[0] -= tsz_estimate[0]
+        cutouts_rotated_arr_for_tsz_estimation = np.copy(cutouts_rotated_arr)
+        tsz_estimate = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr_for_tsz_estimation, weights_for_cutouts = None, perform_random_rotation = True)
+        
+        #fit tsz model
+        tsz_fit_model = tools.fit_fot_tsz(tsz_estimate[0], dx)
+        tsz_estimate[0] = np.copy(tsz_fit_model)
+
+        if (0):
+            subplot(131); imshow(tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
+            subplot(132); imshow(tsz_fit, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
+            subplot(133); imshow(tsz_estimate[0]-tsz_fit, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
+            show(); sys.exit()
+
+        cutouts_rotated_arr[:,0] -= tsz_estimate[0]
+        data['clusters']['cutouts_rotated'][simcntr] = cutouts_rotated_arr
+        stack_after_tsz_removal = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
+
         if (0):
             subplot(131); imshow(stack[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
-            subplot(132); imshow(tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
-            subplot(133); imshow(stack[0] - tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); show(); sys.exit()
+            subplot(132); imshow(tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar();
+            subplot(133); imshow(stack_after_tsz_removal[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); show(); sys.exit()
+
+        stack = np.copy(stack_after_tsz_removal)
 
         data_stack_dic[simcntr]=stack
 ##########################################
@@ -105,12 +131,14 @@ for keyname in data_stack_dic:
         show(); sys.exit()
     data_stack_dic[keyname] -= random_stack
     #print(data_stack_dic[keyname].shape)
-
 ##########################################
 ##########################################
 
 #get models
 model_fd = '%s/models/' %(fd)
+if not os.path.exists(model_fd):
+    tmp_fd = fd.replace('_withclusterksz','').replace('_withclustertsz','')
+    model_fd = '%s/models/' %(tmp_fd)
 model_flist = sorted( glob.glob('%s/*.npy' %(model_fd)) )
 
 def get_model_keyname(model_fname):
@@ -178,6 +206,7 @@ for model_keyname in model_dic:
             title('(%s, %s): %s' %(model_keyname[0], model_keyname[1], tqu_tit_arr[tqu]))
             axhline(lw = 0.5); axvline(lw = 0.5)
         show(); 
+model_dic[bg_model_keyname] -= model_dic[bg_model_keyname]
 #sys.exit()
 
 ##########################################
@@ -207,28 +236,56 @@ if (1):
 #get JK based covariance from cluster cuouts
 dummysimcntr = 1
 cluster_cutouts_rotated_arr=data['clusters']['cutouts_rotated'][dummysimcntr] - random_stack
-if (0):
-    tmp_stack=np.mean(cluster_cutouts_rotated_arr, axis=0)
-    for tqu in range(len(tmp_stack)):
-        subplot(1, tqulen, tqu+1); imshow(tmp_stack[tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar()
-    show(); sys.exit()
+if use_1d:
+    cluster_cutouts_rotated_arr_1d = np.zeros((total_clusters, tqulen, nx))
+    for i in range(total_clusters):
+        for tqu in range(tqulen):
+            cluster_cutouts_rotated_arr_1d[i, tqu] = np.mean(cluster_cutouts_rotated_arr[i, tqu], axis = 0)
+    cluster_cutouts_rotated_arr = np.copy( cluster_cutouts_rotated_arr_1d )
 cluster_grad_mag_arr=data['clusters']['grad_mag'][dummysimcntr]
 
+min_howmany_jk_samples = int(total_clusters * 0.9)
 try:
     howmany_jk_samples = param_dict['howmany_jk_samples']
 except:
-    howmany_jk_samples = 500
-if howmany_jk_samples<500:
-    howmany_jk_samples = 500
-
+    howmany_jk_samples = min_howmany_jk_samples
+if howmany_jk_samples<min_howmany_jk_samples:
+    howmany_jk_samples = min_howmany_jk_samples
+#np.random.seed(100)
 jk_cov=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, only_T=True)
-if (0):
-    print(jk_cov.shape)
-    clf(); imshow(jk_cov, cmap=cmap); colorbar(); show(); sys.exit()
+if (0): print(jk_cov.shape); clf(); imshow(jk_cov, cmap=cmap); colorbar(); show(); sys.exit()
 
 ########################
 ########################
 #get likelihoods
+def get_plname():
+    plfolder = '%s/plots/' %(dataset_fd)
+    if not os.path.exists(plfolder): os.system('mkdir -p %s' %(plfolder))
+    plname = '%s/%sclusters_beam%s_noise%s' %(plfolder, total_clusters, beamval, noiseval)
+    if tqulen == 3:
+        plname = '%s_TQU' %(plname)
+    else:
+        plname = '%s_T' %(plname)
+
+    if fg_gaussian:
+        titstr = 'FG added'
+        plname = '%s_withfg' %(plname)
+    else:
+        titstr = 'No FG'
+        plname = '%s_nofg' %(plname)
+
+    if add_cluster_tsz:
+        plname = '%s_withclustertsz' %(plname)
+        titstr = '%s + cluster tSZ' %(titstr)
+    if add_cluster_ksz:
+        plname = '%s_withclusterksz' %(plname)
+        titstr = '%s + cluster kSZ' %(titstr)
+
+    plname = '%s.png' %(plname)
+
+    return plname, titstr
+
+testing = 0
 tr, tc = tqulen, 1
 for tqu in range(tqulen):
     master_loglarr = []
@@ -236,12 +293,21 @@ for tqu in range(tqulen):
     for simcntr in sorted(data_stack_dic):
         loglarr = []
         massarr = []
-        data_vec = data_stack_dic[simcntr][tqu].flatten()
-        for model_keyname in sorted( model_dic ):
-            model_vec = model_dic[model_keyname][tqu].flatten()
+        if use_1d:
+            data_vec = np.mean(data_stack_dic[simcntr][tqu], axis = 0)
+        else:
+            data_vec = data_stack_dic[simcntr][tqu].flatten()
+        if testing:colorarr = [cm.jet(int(d)) for d in np.linspace(0, 255, len(model_dic))]
+        for modelcntr, model_keyname in enumerate( sorted( model_dic ) ):
+            if use_1d:
+                model_vec = np.mean(model_dic[model_keyname][tqu], axis = 0)
+                if testing: plot(model_vec, color = colorarr[modelcntr])
+            else:
+                model_vec = model_dic[model_keyname][tqu].flatten()
             loglval = tools.get_lnlikelihood(data_vec, model_vec, jk_cov)
             loglarr.append( loglval )
             massarr.append( model_keyname[0] )
+        if testing: show(); sys.exit()
         massarr = np.asarray( massarr )
         massarr, larr, recov_mass, snr = tools.lnlike_to_like(massarr, loglarr)
         #logl_dic[simcntr] = [massarr, loglarr, larr]
@@ -254,6 +320,9 @@ for tqu in range(tqulen):
     combined_mean_mass_err = (combined_mean_mass_low_err + combined_mean_mass_high_err)/2.
     plot(massarr, combined_larr, lw = 1.5, color = 'black', label = r'Combined: %.2f $\pm$ %.2f' %(combined_mean_mass, combined_mean_mass_err));
     axvline(cluster_mass/1e14, ls = '-.', lw = 2.)
+    dataset_fd = '/'.join(dataset_fname.split('/')[:-1])
+    plname, titstr = get_plname()
+    
     if tqu == 0:
         if tqulen == 1:
             legend(loc = 4, ncol = 4, fontsize = 8)
@@ -262,7 +331,9 @@ for tqu in range(tqulen):
     if tqu+1 == tqulen:
         xlabel(r'M$_{200m}$ [$10^{14}$M$_{\odot}$]', fontsize = 14)
     ylabel(r'Normalised $\mathcal{L}$', fontsize = 14)
-    title(r'%s clusters; $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$' %(total_clusters, noiseval))
-show(); 
+    title(r'%s clusters (SNR = %.2f); $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$; %s' %(total_clusters, combined_snr, noiseval, titstr), fontsize = 10)
+#savefig(plname)
+show();
+print(plname)
 sys.exit()
 

@@ -39,12 +39,14 @@ def get_param_dict(paramfile):
 ################################################################################################################
 ################################################################################################################
 
-def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = False, models = False, fg_str = None):
+def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, nclustersorrandoms = None, pol = False, models = False, fg_str = None):
     if is_seq(noiseval):
         tmpnoiseval = noiseval[0]
     else:
         tmpnoiseval = noiseval
     op_folder = '%s/nx%s_dx%s/beam%s/noise%s/%samcutouts/' %(results_folder, nx, dx, beamval, tmpnoiseval, cutout_size_am)
+    if nclustersorrandoms is not None:
+        op_folder = '%s/%sclusters' %(op_folder, nclustersorrandoms)
     if fg_str is not None:
         op_folder = '%s/%s/' %(op_folder, fg_str)
     if pol:

@@ -302,7 +302,7 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
     if add_cluster_ksz:
         fg_str = '%s_withclusterksz' %(fg_str)
     fg_str = fg_str.strip('_')
-    op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = pol, models = True, fg_str = fg_str)
+    op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, nclustersorrandoms = total_clusters, pol = pol, models = True, fg_str = fg_str)
     extrastr = '_randomseed%s_mass%.3f_z%.3f' %(random_seed_for_models, keyname[0], keyname[1])
     op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, totiters_for_model, extrastr = extrastr)
     np.save(op_fname, model_dic)

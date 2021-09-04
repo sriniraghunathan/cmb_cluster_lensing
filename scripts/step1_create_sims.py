@@ -24,6 +24,7 @@ parser = argparse.ArgumentParser(description='')
 parser.add_argument('-start', dest='start', action='store', help='start', type=int, default=0)
 parser.add_argument('-end', dest='end', action='store', help='end', type=int, default=10)
 parser.add_argument('-clusters_or_randoms', dest='clusters_or_randoms', action='store', help='clusters_or_randoms', type=str, default='clusters')
+parser.add_argument('-random_seed_for_sims', dest='random_seed_for_sims', action='store', help='random_seed_for_sims', type=int, default=111)
 
 args = parser.parse_args()
 args_keys = args.__dict__
@@ -224,6 +225,10 @@ for simcntr in range( start, end ):
         if add_cluster_tsz: mdpl2_tsz_cutouts = mdpl2_dic['tsz']
     ########################
 
+    if random_seed_for_sims != -1:
+        randomseedval = random_seed_for_sims * simcntr
+        np.random.seed(randomseedval)
+
     sim_arr=[]
     for i in tqdm(range(nclustersorrandoms)):
         if not pol:
@@ -397,7 +402,7 @@ if add_cluster_tsz:
 if add_cluster_ksz:
     fg_str = '%s_withclusterksz' %(fg_str)
 fg_str = fg_str.strip('_')
-op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, pol = pol, fg_str = fg_str)
+op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, nclustersorrandoms = total_clusters, pol = pol, fg_str = fg_str)
 op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
 sim_dic[sim_type].pop('sims')
 if clusters_or_randoms == 'randoms':

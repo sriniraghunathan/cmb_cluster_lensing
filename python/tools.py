@@ -255,14 +255,18 @@ def get_rotated_tqu_cutouts(sim_arr, sim_arr_for_grad_direction, totobjects, tqu
     return grad_mag_arr, grad_orien_arr, cutouts_rotated_arr
 
 def stack_rotated_tqu_cutouts(cutouts, weights_for_cutouts=None, perform_random_rotation = False):
-    if weights_for_cutouts is None:
-        weights_for_cutouts=np.ones_like(cutouts)
-
     if perform_random_rotation:
+        randinds = np.random.choice(len(cutouts), size = len(cutouts) * 10)
+        #cutouts = cutouts[randinds]
+        #weights_for_cutouts = weights_for_cutouts[randinds]
         for i in range(len(cutouts)):
             tqulen = len(cutouts[i])
             for tqu in range(tqulen):
                 cutouts[i][tqu] = rotate_cutout(cutouts[i][tqu], np.random.random() * 360.)
+
+    if weights_for_cutouts is None:
+        tqulen = len(cutouts[0])
+        weights_for_cutouts=np.ones((len(cutouts), tqulen))
 
     weighted_stack=np.sum( cutouts[:, :] * weights_for_cutouts[:, :, None, None], axis=0)
     weights=np.sum( weights_for_cutouts, axis=0)
@@ -294,8 +298,11 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights=None, only_T=False):
     jk_samples=perform_simple_jackknife_sampling(total_clusters, howmany_jk_samples)
 
     simarr=np.arange(howmany_jk_samples)
-    ny, nx=cutouts[0][0].shape
-    npixels=ny * nx
+    if np.ndim(cutouts) == 4:
+        ny, nx=cutouts[0][0].shape
+        npixels=ny * nx
+    else:
+        npixels=len(cutouts[0][0])
     if only_T:
         tqu_len=1
     else:
