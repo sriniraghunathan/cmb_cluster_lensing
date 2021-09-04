@@ -92,6 +92,22 @@ try:
 except:
     pol_frac_cib = False
 
+#ILC
+try:
+    ilc_file = param_dict['ilc_file'] #ILC residuals
+    which_ilc = param_dict['which_ilc']
+except:
+    ilc_file = None
+    which_ilc = None
+
+if ilc_file is not None:
+    fg_gaussian = None
+    if which_ilc == 'cmbtszfree':
+        add_cluster_tsz = None
+    else:
+        print('\n\n\tyou have requested a ILC that is not tSZ-free. Weighted tsz is not implemented yet. aborting script here.')
+        sys.exit()
+
 #CMB power spectrum
 cls_file = '%s/%s' %(param_dict['data_folder'], param_dict['cls_file'])
 
@@ -154,7 +170,14 @@ el, cl = tools.get_cmb_cls(cls_file, pol = pol)
 ########################
 #get beam and noise
 bl = tools.get_bl(beamval, el, make_2d = 1, mapparams = mapparams)
-nl_dic = tools.get_nl_dic(noiseval, el, pol = pol)
+if ilc_file is None:
+    nl_dic = tools.get_nl_dic(noiseval, el, pol = pol)
+else:
+    ilc_dic = np.load(ilc_file, allow_pickle = True).item()
+    weights_arr, cl_residual_arr = ilc_dic['TT'][which_ilc]
+    cl_residual_arr = np.interp(el, np.arange(len(cl_residual_arr)), cl_residual_arr)
+    nl_dic = {}
+    nl_dic['T'] = cl_residual_arr
 print('\tkeys in nl_dict = %s' %(str(nl_dic.keys())))
 ########################
 
@@ -402,7 +425,7 @@ if add_cluster_tsz:
 if add_cluster_ksz:
     fg_str = '%s_withclusterksz' %(fg_str)
 fg_str = fg_str.strip('_')
-op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, nclustersorrandoms = total_clusters, pol = pol, fg_str = fg_str)
+op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, ilc_file = ilc_file, which_ilc = which_ilc, nclustersorrandoms = total_clusters, pol = pol, fg_str = fg_str)
 op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
 sim_dic[sim_type].pop('sims')
 if clusters_or_randoms == 'randoms':
