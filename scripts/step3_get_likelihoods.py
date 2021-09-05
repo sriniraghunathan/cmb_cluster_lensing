@@ -77,8 +77,6 @@ else: #handle tsz
         cutouts_rotated_arr=data['clusters']['cutouts_rotated'][simcntr]
         grad_mag_arr=data['clusters']['grad_mag'][simcntr]
 
-        fitfunc = lambda p, radius: p[0] + p[1] * ( 1.0 + (radius/p[2]) ** 2. ) ** (0.5 - (1.5 * p[3]) )
-
         ###stack = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
 
         #estimate and remove tSZ from rotated stack
@@ -86,7 +84,7 @@ else: #handle tsz
         tsz_estimate = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr_for_tsz_estimation, weights_for_cutouts = None, perform_random_rotation = True)
         
         #fit tsz model
-        tsz_fit_model = tools.fit_fot_tsz(tsz_estimate[0], dx)
+        tsz_fit_model = foregrounds.fit_fot_tsz(tsz_estimate[0], dx)
         tsz_estimate[0] = np.copy(tsz_fit_model)
 
         if (0):
@@ -222,6 +220,14 @@ if (1):
     except:
         fg_gaussian = False
 
+    #ILC
+    try:
+        ilc_file = param_dict['ilc_file'] #ILC residuals
+        which_ilc = param_dict['which_ilc']
+    except:
+        ilc_file = None
+        which_ilc = None
+
     #cluster info
     cluster_mass = param_dict['cluster_mass']
     cluster_z = param_dict['cluster_z']
@@ -273,6 +279,10 @@ def get_plname():
     else:
         titstr = 'No FG'
         plname = '%s_nofg' %(plname)
+
+    if ilc_file is not None:
+        titstr = 'ILC: %s' %(which_ilc)
+        plname = '%s_ilc_%s' %(plname, which_ilc)
 
     if add_cluster_tsz:
         plname = '%s_withclustertsz' %(plname)
@@ -329,7 +339,8 @@ for tqu in range(tqulen):
         else:
             legend(loc = 4, ncol = 8, fontsize = 6)
     if tqu+1 == tqulen:
-        xlabel(r'M$_{200m}$ [$10^{14}$M$_{\odot}$]', fontsize = 14)
+        mdefstr = 'M$_{%s%s}$' %(param_dict['delta'], param_dict['rho_def'])
+        xlabel(r'%s [$10^{14}$M$_{\odot}$]' %(mdefstr), fontsize = 14)
     ylabel(r'Normalised $\mathcal{L}$', fontsize = 14)
     title(r'%s clusters (SNR = %.2f); $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$; %s' %(total_clusters, combined_snr, noiseval, titstr), fontsize = 10)
 #savefig(plname)

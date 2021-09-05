@@ -426,7 +426,7 @@ if add_cluster_tsz:
 if add_cluster_ksz:
     fg_str = '%s_withclusterksz' %(fg_str)
 fg_str = fg_str.strip('_')
-mdef = 'm%s%s_%g' %(param_dict['delta'], param_dict['rho_def'], cluster_mass)
+mdef = 'm%s%s_%g' %(param_dict['delta'], param_dict['rho_def'], param_dict['cluster_mass'])
 op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, mdef = mdef, ilc_file = ilc_file, which_ilc = which_ilc, nclustersorrandoms = total_clusters, pol = pol, fg_str = fg_str)
 op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
 sim_dic[sim_type].pop('sims')

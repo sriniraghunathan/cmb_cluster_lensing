@@ -190,7 +190,13 @@ def get_mdpl2_cluster_tsz_ksz(total, reqd_dx, return_tsz = True, return_ksz = Tr
 
     return mdpl2_dic, mdpl2_cutout_size_am
 
+def fitfunc(p, radius):
+    return p[0] + p[1] * ( 1.0 + (radius/p[2]) ** 2. ) ** (0.5 - (1.5 * p[3]) )
+
 def tsz_beta_model_fitting_func(p, p0, radius, data = None, lbounds = None, ubounds = None, fixed = None, return_fit = 0):            
+
+    #fitfunc = lambda p, radius: p[0] + p[1] * ( 1.0 + (radius/p[2]) ** 2. ) ** (0.5 - (1.5 * p[3]) )
+
     if hasattr(fixed, '__len__'):                
         p[fixed] = p0[fixed]
 
