@@ -39,7 +39,7 @@ def get_param_dict(paramfile):
 ################################################################################################################
 ################################################################################################################
 
-def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, ilc_file = None, which_ilc = None, nclustersorrandoms = None, pol = False, models = False, fg_str = None):
+def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, mdef = None, ilc_file = None, which_ilc = None, nclustersorrandoms = None, pol = False, models = False, fg_str = None):
     if ilc_file is None:
         if is_seq(noiseval):
             tmpnoiseval = noiseval[0]
@@ -48,7 +48,11 @@ def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, ilc
         tmpnoiseval = 'noise%s' %(tmpnoiseval)
     else:
         tmpnoiseval = 'ilc/%s/%s/' %(ilc_file.split('/')[-1].replace('.npy',''), which_ilc)
-    op_folder = '%s/nx%s_dx%s/beam%s/%s/%samcutouts/' %(results_folder, nx, dx, beamval, tmpnoiseval, cutout_size_am)
+    if mdef is None:
+        mdeffd = ''
+    else:
+        mdeffd = '%s/' %(mdef)
+    op_folder = '%s/nx%s_dx%s/beam%s/%s/%samcutouts/%s' %(results_folder, nx, dx, beamval, tmpnoiseval, cutout_size_am, mdeffd)
     if nclustersorrandoms is not None:
         op_folder = '%s/%sclusters' %(op_folder, nclustersorrandoms)
     if fg_str is not None:

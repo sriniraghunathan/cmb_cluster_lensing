@@ -23,6 +23,7 @@ print('\n')
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('-start', dest='start', action='store', help='start', type=int, default=0)
 parser.add_argument('-end', dest='end', action='store', help='end', type=int, default=10)
+parser.add_argument('-paramfile', dest='paramfile', action='store', help='paramfile', type=str, required=True)#='params.ini')
 parser.add_argument('-clusters_or_randoms', dest='clusters_or_randoms', action='store', help='clusters_or_randoms', type=str, default='clusters')
 parser.add_argument('-random_seed_for_sims', dest='random_seed_for_sims', action='store', help='random_seed_for_sims', type=int, default=111)
 
@@ -43,7 +44,6 @@ if clusters_or_randoms == 'randoms':
 ########################
 
 ########################
-paramfile = 'params.ini'
 print('\tread/get necessary params')
 param_dict = misc.get_param_dict(paramfile)
 
@@ -219,6 +219,7 @@ if clusters_or_randoms == 'clusters':
 
     kappa_arr = lensing.get_convergence(ra_grid_deg, dec_grid_deg, ra_list, dec_list, M200c_list, redshift_list, param_dict)
     print('\tShape of convergence array is %s' %(str(kappa_arr.shape)))
+    #imshow(kappa_arr[0]); colorbar(); show(); sys.exit()
 ########################
 
 ########################
@@ -425,7 +426,8 @@ if add_cluster_tsz:
 if add_cluster_ksz:
     fg_str = '%s_withclusterksz' %(fg_str)
 fg_str = fg_str.strip('_')
-op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, ilc_file = ilc_file, which_ilc = which_ilc, nclustersorrandoms = total_clusters, pol = pol, fg_str = fg_str)
+mdef = 'm%s%s_%g' %(param_dict['delta'], param_dict['rho_def'], cluster_mass)
+op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, mdef = mdef, ilc_file = ilc_file, which_ilc = which_ilc, nclustersorrandoms = total_clusters, pol = pol, fg_str = fg_str)
 op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
 sim_dic[sim_type].pop('sims')
 if clusters_or_randoms == 'randoms':
