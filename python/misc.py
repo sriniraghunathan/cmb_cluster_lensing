@@ -69,11 +69,11 @@ def get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, mde
 ################################################################################################################
 ################################################################################################################
 
-def get_op_fname(op_folder, sim_type, nclustersorrandoms, total_sims, start = -1, end = -1, extrastr = ''):
+def get_op_fname(op_folder, sim_type, nclustersorrandoms, total_sims, start = -1, end = -1, extrastr = '', random_seed_for_sims = -1):
     if start != -1 and end != -1:
-        fname = '%s/%s_%sobjects_%ssims%sto%s%s.npy' %(op_folder, sim_type, nclustersorrandoms, total_sims, start, end, extrastr)
+        fname = '%s/%s_%sobjects_%ssims%sto%s%s_rsval%s.npy' %(op_folder, sim_type, nclustersorrandoms, total_sims, start, end, extrastr, random_seed_for_sims)
     else:
-        fname = '%s/%s_%sobjects_%ssims%s.npy' %(op_folder, sim_type, nclustersorrandoms, total_sims, extrastr)
+        fname = '%s/%s_%sobjects_%ssims%s_rsval%s.npy' %(op_folder, sim_type, nclustersorrandoms, total_sims, extrastr, random_seed_for_sims)
     return fname
 
 ################################################################################################################

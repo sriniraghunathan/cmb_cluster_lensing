@@ -404,7 +404,7 @@ def likelihood_finer_resol(M, L, intrp_type=2):
 
     return M_ip, L_ip
 
-def lnlike_to_like(M, lnlike, intrp_type=0):
+def lnlike_to_like(M, lnlike, intrp_type=2):
 
     lnlike=lnlike - max(lnlike)
 
@@ -426,13 +426,14 @@ def lnlike_to_like(M, lnlike, intrp_type=0):
     if intrp_type <= 1: #no interpolation
         return M, L, recov_mass, snr
 
+    #from IPython import embed; embed()
     M_ip, L_ip=likelihood_finer_resol(M, L, intrp_type=intrp_type)
     L_ip /= max(L_ip)
     recov_mass=M_ip[np.argmax(L_ip)]
 
     return M_ip, L_ip, recov_mass, snr
 
-def random_sampler(x, y, howmanysamples = 100000, burn_in = 5000):
+def random_sampler(x, y, howmanysamples = 10000, burn_in = 500):
     import scipy.integrate as integrate
     import scipy.interpolate as interpolate
 

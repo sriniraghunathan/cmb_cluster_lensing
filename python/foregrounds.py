@@ -4,7 +4,7 @@ import scipy.ndimage as ndimage
 from pylab import *
 
 h, k_B, c=6.626e-34,1.38e-23, 3e8
-data_folder = '/Users/sraghunathan/Research/SPTPol/analysis/git/cmb_cluster_lensing/python/data/'
+data_folder = 'data/'
 
 def get_foreground_power_spt(component, freq1=150, freq2=None, units='uk', lmax = None):
     """

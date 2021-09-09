@@ -25,7 +25,7 @@ parser.add_argument('-start', dest='start', action='store', help='start', type=i
 parser.add_argument('-end', dest='end', action='store', help='end', type=int, default=10)
 parser.add_argument('-paramfile', dest='paramfile', action='store', help='paramfile', type=str, required=True)#='params.ini')
 parser.add_argument('-clusters_or_randoms', dest='clusters_or_randoms', action='store', help='clusters_or_randoms', type=str, default='clusters')
-parser.add_argument('-random_seed_for_sims', dest='random_seed_for_sims', action='store', help='random_seed_for_sims', type=int, default=111)
+parser.add_argument('-random_seed_for_sims', dest='random_seed_for_sims', action='store', help='random_seed_for_sims', type=int, default=-1)#111)
 
 args = parser.parse_args()
 args_keys = args.__dict__
@@ -428,7 +428,7 @@ if add_cluster_ksz:
 fg_str = fg_str.strip('_')
 mdef = 'm%s%s_%g' %(param_dict['delta'], param_dict['rho_def'], param_dict['cluster_mass'])
 op_folder = misc.get_op_folder(results_folder, nx, dx, beamval, noiseval, cutout_size_am, mdef = mdef, ilc_file = ilc_file, which_ilc = which_ilc, nclustersorrandoms = total_clusters, pol = pol, fg_str = fg_str)
-op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end)
+op_fname = misc.get_op_fname(op_folder, sim_type, nclustersorrandoms, end-start, start, end, random_seed_for_sims = random_seed_for_sims)
 sim_dic[sim_type].pop('sims')
 if clusters_or_randoms == 'randoms':
     sim_dic[sim_type].pop('cutouts_rotated')

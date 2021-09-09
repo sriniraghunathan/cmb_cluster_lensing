@@ -85,7 +85,9 @@ else: #handle tsz
         
         #fit tsz model
         tsz_fit_model = foregrounds.fit_fot_tsz(tsz_estimate[0], dx)
-        tsz_estimate[0] = np.copy(tsz_fit_model)
+        if (0):
+            print('\n\t\t\tfitting for tsz\n\n')
+            tsz_estimate[0] = np.copy(tsz_fit_model)
 
         if (0):
             subplot(131); imshow(tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
@@ -291,13 +293,19 @@ def get_plname():
         plname = '%s_withclusterksz' %(plname)
         titstr = '%s + cluster kSZ' %(titstr)
 
+    plname = plname.replace('plots//', 'plots/')
+    opfname = '%s.npy' %(plname.replace('/plots/', '/results_'))
     plname = '%s.png' %(plname)
+    
+    return plname, opfname, titstr
 
-    return plname, titstr
-
+res_dic = {}
+res_dic['likelihood'] = {}
 testing = 0
 tr, tc = tqulen, 1
+tqudic = {0: 'T', 1: 'Q', 2: 'U'}
 for tqu in range(tqulen):
+    res_dic['likelihood'][tqudic[tqu]] = {}
     master_loglarr = []
     ax = subplot(tr, tc, tqu+1)
     for simcntr in sorted(data_stack_dic):
@@ -319,19 +327,21 @@ for tqu in range(tqulen):
             massarr.append( model_keyname[0] )
         if testing: show(); sys.exit()
         massarr = np.asarray( massarr )
-        massarr, larr, recov_mass, snr = tools.lnlike_to_like(massarr, loglarr)
+        massarr_mod, larr, recov_mass, snr = tools.lnlike_to_like(massarr, loglarr)
         #logl_dic[simcntr] = [massarr, loglarr, larr]
         master_loglarr.append( loglarr )
-        plot(massarr, larr, label = simcntr, lw = 0.5);
+        plot(massarr_mod, larr, label = simcntr, lw = 0.5);
+        res_dic['likelihood'][tqudic[tqu]][simcntr] = [massarr, loglarr, massarr_mod, larr, recov_mass, snr]
 
     combined_loglarr = np.sum(master_loglarr, axis = 0)
-    massarr, combined_larr, combined_recov_mass, combined_snr = tools.lnlike_to_like(massarr, combined_loglarr)
-    combined_mean_mass, combined_mean_mass_low_err, combined_mean_mass_high_err = tools.get_width_from_sampling(massarr, combined_larr)
+    massarr_mod, combined_larr, combined_recov_mass, combined_snr = tools.lnlike_to_like(massarr, combined_loglarr)
+    combined_mean_mass, combined_mean_mass_low_err, combined_mean_mass_high_err = tools.get_width_from_sampling(massarr_mod, combined_larr)
     combined_mean_mass_err = (combined_mean_mass_low_err + combined_mean_mass_high_err)/2.
-    plot(massarr, combined_larr, lw = 1.5, color = 'black', label = r'Combined: %.2f $\pm$ %.2f' %(combined_mean_mass, combined_mean_mass_err));
+    plot(massarr_mod, combined_larr, lw = 1.5, color = 'black', label = r'Combined: %.2f $\pm$ %.2f' %(combined_mean_mass, combined_mean_mass_err));
     axvline(cluster_mass/1e14, ls = '-.', lw = 2.)
     dataset_fd = '/'.join(dataset_fname.split('/')[:-1])
-    plname, titstr = get_plname()
+    plname, opfname, titstr = get_plname()
+    res_dic['likelihood'][tqudic[tqu]][-1] = [massarr, combined_loglarr, massarr_mod, combined_larr, combined_recov_mass, combined_snr]
     
     if tqu == 0:
         if tqulen == 1:
@@ -343,8 +353,10 @@ for tqu in range(tqulen):
         xlabel(r'%s [$10^{14}$M$_{\odot}$]' %(mdefstr), fontsize = 14)
     ylabel(r'Normalised $\mathcal{L}$', fontsize = 14)
     title(r'%s clusters (SNR = %.2f); $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$; %s' %(total_clusters, combined_snr, noiseval, titstr), fontsize = 10)
+res_dic['param_dict'] = param_dict
+np.save(opfname, res_dic)
 #savefig(plname)
-show();
+#show();
 print(plname)
 sys.exit()
 
