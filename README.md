@@ -7,8 +7,8 @@
 
 ## Steps for pipeline execution:
 * Step 1: Creating cluster lensed or random unlensed CMB simulations.
-  * python step1_create_sims.py *(for cluster lensed sims)*
-  * python step1_create_sims.py -clusters_or_randoms randoms *(for random unlensed sims used for background subtraction)*
+  * python step1_create_sims.py -paramfile params.ini *(for cluster lensed sims)*
+  * python step1_create_sims.py -paramfile params.ini -clusters_or_randoms randoms *(for random unlensed sims used for background subtraction)*
 * Step 2: Create models.
   * python step2_gen_models.py -dataset_fname [path_to_cluster_lensed_cmb_sim_file_from_step1]
 * Step 3: Estimate covariance matrix using JK approach / obtain likelihoods. This module also helps you to do tSZ subtraction automatically if cluster correalted tSZ signal is added to the lensed CMB simulations.
