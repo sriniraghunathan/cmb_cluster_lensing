@@ -293,8 +293,8 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
     print('\t\tstack rotated cutouts + apply gradient magnitude weights')
     model_dic = {}
     for sim_type in sim_dic:
-        model_dic[simcntr] = {}
         for simcntr in range( totiters_for_model ):
+            model_dic[simcntr] = {}        
             print('\t\t\tmodel dataset %s of %s' %(simcntr+1, totiters_for_model))
             cutouts_rotated_arr=sim_dic[sim_type]['cutouts_rotated'][simcntr]
             grad_mag_arr=sim_dic[sim_type]['grad_mag'][simcntr]
