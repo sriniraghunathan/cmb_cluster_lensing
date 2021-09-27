@@ -294,13 +294,14 @@ for simcntr in range( start, end ):
         sim_map=cmb_map + noise_map + fg_map
 
         #add cluster correalted ksz/tsz from MDPL2 if requested for temperature
-        if sim_type == 'clusters' and tqu == 0:
-            if add_cluster_ksz: #ksz
-                ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
-                sim_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_ksz_cutouts[i]        
-            if add_cluster_tsz: #tsz
-                ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
-                sim_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_tsz_cutouts[i]
+        for tqu in range(tqulen):
+            if sim_type == 'clusters' and tqu == 0:
+                if add_cluster_ksz: #ksz
+                    ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
+                    sim_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_ksz_cutouts[i]        
+                if add_cluster_tsz: #tsz
+                    ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
+                    sim_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_tsz_cutouts[i]
 
         for tqu in range(tqulen):#mean subtraction for T(/Q/U)
             sim_map[tqu] -= np.mean(sim_map[tqu])
