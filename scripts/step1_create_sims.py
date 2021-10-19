@@ -256,14 +256,14 @@ for simcntr in range( start, end ):
     sim_arr=[]
     for i in tqdm(range(nclustersorrandoms)):
         if not pol:
-            cmb_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl[0], bl=bl)] )
+            cmb_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl[0])] )
             noise_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, nl_dic['T'])] )
             if fg_gaussian:
                 fg_map=np.asarray( [flatsky.make_gaussian_realisation(mapparams, el, cl_fg_dic['T'])] )
             else:
                 fg_map = np.zeros_like(noise_map)
         else:
-            cmb_map=flatsky.make_gaussian_realisation(mapparams, el, cl[0], cl2=cl[1], cl12=cl[3], bl=bl, qu_or_eb='qu')
+            cmb_map=flatsky.make_gaussian_realisation(mapparams, el, cl[0], cl2=cl[1], cl12=cl[3], qu_or_eb='qu')
             noise_map_T=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['T'])
             noise_map_Q=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['P'])
             noise_map_U=flatsky.make_gaussian_realisation(mapparams, el, nl_dic['P'])
@@ -290,6 +290,10 @@ for simcntr in range( start, end ):
             if i == 0 and debug:
                 show()
             cmb_map=np.asarray(cmb_map_lensed)
+
+        #add beam
+        cmb_map = np.fft.ifft2( np.fft.fft2(cmb_map) * bl ).real
+        fg_map = np.fft.ifft2( np.fft.fft2(fg_map) * bl ).real
             
         sim_map=cmb_map + noise_map + fg_map
 
