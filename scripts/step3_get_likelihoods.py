@@ -23,6 +23,7 @@ print('\n')
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/nogaussianfg/T/clusters_700objects_10sims0to10.npy')
 parser.add_argument('-use_1d', dest='use_1d', action='store', help='use_1d', type=int, default=0)
+parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=25)#1)
 
 
 args = parser.parse_args()
@@ -139,7 +140,7 @@ model_fd = '%s/models/' %(fd)
 if not os.path.exists(model_fd):
     tmp_fd = fd.replace('_withclusterksz','').replace('_withclustertsz','')
     model_fd = '%s/models/' %(tmp_fd)
-model_flist = sorted( glob.glob('%s/*.npy' %(model_fd)) )
+model_flist = sorted( glob.glob('%s/*_%ssims_*.npy' %(model_fd, totiters_for_model)) )
 
 def get_model_keyname(model_fname):
     model_keyname_tmp = '_'.join(model_fname.split('_')[-3:-1]).replace('mass', '').replace('z','').replace('.npy','').split('_')

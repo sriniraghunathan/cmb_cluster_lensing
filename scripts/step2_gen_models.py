@@ -23,9 +23,9 @@ print('\n')
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/nogaussianfg/T/clusters_700objects_10sims0to10.npy')
 parser.add_argument('-minM', dest='minM', action='store', help='minM', type=float, default=0.)
-parser.add_argument('-maxM', dest='maxM', action='store', help='maxM', type=float, default=5.)
+parser.add_argument('-maxM', dest='maxM', action='store', help='maxM', type=float, default=4.)
 parser.add_argument('-delM', dest='delM', action='store', help='delM', type=float, default=0.1)
-parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=1)
+parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=25)#1)
 parser.add_argument('-random_seed_for_models', dest='random_seed_for_models', action='store', help='random_seed_for_models', type=int, default=100)
 
 args = parser.parse_args()
@@ -79,6 +79,17 @@ try:
     add_cluster_ksz=param_dict['add_cluster_ksz']
 except:
     add_cluster_ksz=False
+
+try:
+    pol_frac_radio = param_dict['pol_frac_radio']
+except:
+    pol_frac_radio = False
+
+try:
+    pol_frac_cib = param_dict['pol_frac_cib']
+except:
+    pol_frac_cib = False
+
 
 #ILC
 try:
@@ -171,7 +182,7 @@ print('\tkeys in nl_dict = %s' %(str(nl_dic.keys())))
 ########################
 #get foreground spectra if requested
 if fg_gaussian:
-    cl_fg_dic = tools.get_cl_fg(el = el, freq = 150, pol = pol)
+    cl_fg_dic = tools.get_cl_fg(el = el, freq = 150, pol = pol, pol_frac_cib = pol_frac_cib, pol_frac_radio = pol_frac_radio)
 ########################
 
 ########################
