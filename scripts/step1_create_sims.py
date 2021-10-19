@@ -148,7 +148,6 @@ lpf_gradient_filter = param_dict['lpf_gradient_filter']
 cutout_size_am_for_grad = param_dict['cutout_size_am_for_grad'] #arcminutes
 ########################
 
-
 ########################
 #get ra, dec or map-pixel grid
 ra=np.linspace(x1,x2, nx) #arcmins
@@ -185,7 +184,6 @@ print('\tkeys in nl_dict = %s' %(str(nl_dic.keys())))
 #get foreground spectra if requested
 if fg_gaussian:
     cl_fg_dic = tools.get_cl_fg(el = el, freq = 150, pol = pol, pol_frac_cib = pol_frac_cib, pol_frac_radio = pol_frac_radio)
-    print(cl_fg_dic); sys.exit()
 ########################
 
 ########################
