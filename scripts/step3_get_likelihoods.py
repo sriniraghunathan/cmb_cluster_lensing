@@ -23,7 +23,7 @@ print('\n')
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help='dataset_fname', type=str, default='../results//nx120_dx1/beam1.2/noise5/10amcutouts/nogaussianfg/T/clusters_700objects_10sims0to10.npy')
 parser.add_argument('-use_1d', dest='use_1d', action='store', help='use_1d', type=int, default=0)
-parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=25)#1)
+parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=1)#25)
 
 
 args = parser.parse_args()

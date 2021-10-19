@@ -25,7 +25,7 @@ parser.add_argument('-dataset_fname', dest='dataset_fname', action='store', help
 parser.add_argument('-minM', dest='minM', action='store', help='minM', type=float, default=0.)
 parser.add_argument('-maxM', dest='maxM', action='store', help='maxM', type=float, default=4.)
 parser.add_argument('-delM', dest='delM', action='store', help='delM', type=float, default=0.1)
-parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=25)#1)
+parser.add_argument('-totiters_for_model', dest='totiters_for_model', action='store', help='totiters_for_model', type=int, default=1)#25)
 parser.add_argument('-random_seed_for_models', dest='random_seed_for_models', action='store', help='random_seed_for_models', type=int, default=100)
 
 args = parser.parse_args()
