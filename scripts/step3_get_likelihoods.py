@@ -142,7 +142,7 @@ if not os.path.exists(model_fd):
 model_flist = sorted( glob.glob('%s/*.npy' %(model_fd)) )
 
 def get_model_keyname(model_fname):
-    model_keyname_tmp = '_'.join(model_fname.split('_')[-2:]).replace('mass', '').replace('z','').replace('.npy','').split('_')
+    model_keyname_tmp = '_'.join(model_fname.split('_')[-3:-1]).replace('mass', '').replace('z','').replace('.npy','').split('_')
     model_mass, model_z = float(model_keyname_tmp[0]), float(model_keyname_tmp[1])
     model_keyname = ( round(model_mass, 3), round(model_z, 3) )
     return model_keyname   
@@ -355,8 +355,8 @@ for tqu in range(tqulen):
     title(r'%s clusters (SNR = %.2f); $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$; %s' %(total_clusters, combined_snr, noiseval, titstr), fontsize = 10)
 res_dic['param_dict'] = param_dict
 np.save(opfname, res_dic)
-#savefig(plname)
-#show();
+savefig(plname)
+show();
 print(plname)
 sys.exit()
 
