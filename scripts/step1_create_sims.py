@@ -185,6 +185,7 @@ print('\tkeys in nl_dict = %s' %(str(nl_dic.keys())))
 #get foreground spectra if requested
 if fg_gaussian:
     cl_fg_dic = tools.get_cl_fg(el = el, freq = 150, pol = pol, pol_frac_cib = pol_frac_cib, pol_frac_radio = pol_frac_radio)
+    print(cl_fg_dic); sys.exit()
 ########################
 
 ########################
@@ -291,21 +292,21 @@ for simcntr in range( start, end ):
                 show()
             cmb_map=np.asarray(cmb_map_lensed)
 
-        #add beam
-        cmb_map = np.fft.ifft2( np.fft.fft2(cmb_map) * bl ).real
-        fg_map = np.fft.ifft2( np.fft.fft2(fg_map) * bl ).real
-            
-        sim_map=cmb_map + noise_map + fg_map
-
         #add cluster correalted ksz/tsz from MDPL2 if requested for temperature
         for tqu in range(tqulen):
             if sim_type == 'clusters' and tqu == 0:
                 if add_cluster_ksz: #ksz
                     ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
-                    sim_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_ksz_cutouts[i]        
+                    fg_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_ksz_cutouts[i]        
                 if add_cluster_tsz: #tsz
                     ey1, ey2, ex1, ex2=tools.extract_cutout(mapparams, mdpl2_cutout_size_am)
-                    sim_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_tsz_cutouts[i]
+                    fg_map[tqu, ey1:ey2, ex1:ex2]+=mdpl2_tsz_cutouts[i]
+
+        #add beam
+        cmb_map = np.fft.ifft2( np.fft.fft2(cmb_map) * bl ).real
+        fg_map = np.fft.ifft2( np.fft.fft2(fg_map) * bl ).real
+            
+        sim_map=cmb_map + noise_map + fg_map
 
         for tqu in range(tqulen):#mean subtraction for T(/Q/U)
             sim_map[tqu] -= np.mean(sim_map[tqu])
