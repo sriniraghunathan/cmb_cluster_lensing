@@ -292,7 +292,7 @@ def perform_simple_jackknife_sampling(total, howmany_jk_samples):
         jk_samples.append( (non_inds) )
     return np.asarray( jk_samples )
 
-def get_jk_covariance(cutouts, howmany_jk_samples, weights=None, only_T=False):
+def get_jk_covariance(cutouts, howmany_jk_samples, weights=None, T_or_Q_or_U='T'):
 
     total_clusters=len(cutouts)
     jk_samples=perform_simple_jackknife_sampling(total_clusters, howmany_jk_samples)
@@ -303,10 +303,13 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights=None, only_T=False):
         npixels=ny * nx
     else:
         npixels=len(cutouts[0][0])
-    if only_T:
+    tquarr = np.asarray(['T','Q','U'])
+    if T_or_Q_or_U != 'all':
         tqu_len=1
+        tqu_ind_arr = np.where(tquarr == T_or_Q_or_U)[0]
     else:
         tqu_len=len(cutouts[0])
+        tqu_ind_arr = [0, 1, 2]
 
     if weights is None:
         weights=np.ones( total_clusters )
@@ -319,7 +322,7 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights=None, only_T=False):
         non_inds=jk_samples[n]
 
         tqu_cluster_stack=[]
-        for tqucntr in range(tqu_len):
+        for tqucntr in tqu_ind_arr:
 
             weighted_cluster_stack_arr=[]
             curr_cutouts, curr_weights=cutouts[non_inds, tqucntr], weights[non_inds, tqucntr]

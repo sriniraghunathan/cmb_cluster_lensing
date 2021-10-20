@@ -194,7 +194,7 @@ for model_fname in model_flist:
 ##########################################
 
 #subtract M=0 from all
-bg_model_keyname = (0., 0.7)
+bg_model_keyname = (0., 0.5)#0.7)
 for model_keyname in model_dic:
     if model_keyname == bg_model_keyname: continue
     model_dic[model_keyname] -= model_dic[bg_model_keyname]
@@ -260,9 +260,25 @@ except:
     howmany_jk_samples = min_howmany_jk_samples
 if howmany_jk_samples<min_howmany_jk_samples:
     howmany_jk_samples = min_howmany_jk_samples
+if howmany_jk_samples>len(cluster_cutouts_rotated_arr):
+    howmany_jk_samples = len(cluster_cutouts_rotated_arr) - 1
 #np.random.seed(100)
-jk_cov=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, only_T=True)
-if (0): print(jk_cov.shape); clf(); imshow(jk_cov, cmap=cmap); colorbar(); show(); sys.exit()
+jk_cov_T=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, T_or_Q_or_U='T')
+jk_cov_dic = {}
+jk_cov_dic['T'] = jk_cov_T
+if pol:
+    jk_cov_Q=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, T_or_Q_or_U='Q')
+    jk_cov_U=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, T_or_Q_or_U='U')
+    jk_cov_dic['Q'] = jk_cov_Q
+    jk_cov_dic['U'] = jk_cov_U
+jk_cov_all=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, T_or_Q_or_U='all')
+jk_cov_dic['all'] = jk_cov_all
+if (0):
+    clf(); 
+    subplot(221);imshow(jk_cov_T, cmap=cmap); colorbar(); 
+    subplot(222);imshow(jk_cov_Q, cmap=cmap); colorbar(); 
+    subplot(223);imshow(jk_cov_U, cmap=cmap); colorbar(); 
+    subplot(224);imshow(jk_cov_all, cmap=cmap); colorbar(); show(); sys.exit()
 
 ########################
 ########################
@@ -323,7 +339,7 @@ for tqu in range(tqulen):
                 if testing: plot(model_vec, color = colorarr[modelcntr])
             else:
                 model_vec = model_dic[model_keyname][tqu].flatten()
-            loglval = tools.get_lnlikelihood(data_vec, model_vec, jk_cov)
+            loglval = tools.get_lnlikelihood(data_vec, model_vec, jk_cov_dic[tqudic[tqu]])
             loglarr.append( loglval )
             massarr.append( model_keyname[0] )
         if testing: show(); sys.exit()
@@ -355,8 +371,8 @@ for tqu in range(tqulen):
     ylabel(r'Normalised $\mathcal{L}$', fontsize = 14)
     title(r'%s clusters (SNR = %.2f); $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$; %s' %(total_clusters, combined_snr, noiseval, titstr), fontsize = 10)
 res_dic['param_dict'] = param_dict
-np.save(opfname, res_dic)
-savefig(plname)
+##np.save(opfname, res_dic)
+##savefig(plname)
 show();
 print(plname)
 sys.exit()
