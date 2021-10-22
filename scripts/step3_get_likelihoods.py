@@ -86,15 +86,16 @@ else: #handle tsz
         
         #fit tsz model
         tsz_fit_model = foregrounds.fit_fot_tsz(tsz_estimate[0], dx)
-        if (0):
-            print('\n\t\t\tfitting for tsz\n\n')
-            tsz_estimate[0] = np.copy(tsz_fit_model)
 
         if (0):
             subplot(131); imshow(tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
-            subplot(132); imshow(tsz_fit, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
-            subplot(133); imshow(tsz_estimate[0]-tsz_fit, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
+            subplot(132); imshow(tsz_fit_model, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
+            subplot(133); imshow(tsz_estimate[0]-tsz_fit_model, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
             show(); sys.exit()
+
+        if (1):
+            print('\n\t\t\tfitting for tsz\n\n')
+            tsz_estimate[0] = np.copy(tsz_fit_model)
 
         cutouts_rotated_arr[:,0] -= tsz_estimate[0]
         data['clusters']['cutouts_rotated'][simcntr] = cutouts_rotated_arr
@@ -120,18 +121,20 @@ random_stack = random_stack_dic[0]
 
 #subtract background from data stack
 for keyname in data_stack_dic:
-    if (0):
+    if (1):
         tmp_stack = data_stack_dic[keyname]
         tmp_stack_bg_sub = data_stack_dic[keyname] - random_stack
         sbpl=1
         for tqu in range(len(data_stack_dic[keyname])):
             subplot(tqulen, 3, sbpl); imshow(tmp_stack[tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); sbpl+=1
             subplot(tqulen, 3, sbpl); imshow(random_stack[tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); sbpl+=1
-            subplot(tqulen, 3, sbpl); imshow(tmp_stack_bg_sub[tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); sbpl+=1
+            subplot(tqulen, 3, sbpl); imshow(tmp_stack_bg_sub[tqu], cmap=cmap, extent = [x1, x2, x1, x2], vmin = -2.5, vmax = 2.5); colorbar(); sbpl+=1
             title('%s' %(tqu_tit_arr[tqu]))
         show(); sys.exit()
     data_stack_dic[keyname] -= random_stack
+    data_stack_dic[keyname][np.isnan(data_stack_dic[keyname])] = 0.
     #print(data_stack_dic[keyname].shape)
+    if np.sum(data_stack_dic[keyname][1]) == 0.: tqulen = 1
 ##########################################
 ##########################################
 
@@ -199,14 +202,16 @@ for model_keyname in model_dic:
     if model_keyname == bg_model_keyname: continue
     model_dic[model_keyname] -= model_dic[bg_model_keyname]
     if (0):#model_keyname[0]>0.8 and model_keyname[0]<1.2:#(1):
-        for tqu in range(len(model_dic[model_keyname])):
+        #for tqu in range(len(model_dic[model_keyname])):
+        for tqu in range(tqulen):
+            print(model_dic[model_keyname][tqu])
             vmin, vmax = -2., 2.
             vmin, vmax = None, None
             subplot(1, tqulen, tqu+1); imshow(model_dic[model_keyname][tqu], cmap=cmap, extent = [x1, x2, x1, x2], vmin = vmin, vmax = vmax); 
             colorbar()
             title('(%s, %s): %s' %(model_keyname[0], model_keyname[1], tqu_tit_arr[tqu]))
             axhline(lw = 0.5); axvline(lw = 0.5)
-        show(); 
+        show(); sys.exit()
 model_dic[bg_model_keyname] -= model_dic[bg_model_keyname]
 #sys.exit()
 
@@ -271,8 +276,9 @@ if pol:
     jk_cov_U=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, T_or_Q_or_U='U')
     jk_cov_dic['Q'] = jk_cov_Q
     jk_cov_dic['U'] = jk_cov_U
-jk_cov_all=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, T_or_Q_or_U='all')
-jk_cov_dic['all'] = jk_cov_all
+    #jk_cov_all=tools.get_jk_covariance(cluster_cutouts_rotated_arr, howmany_jk_samples, weights=cluster_grad_mag_arr, T_or_Q_or_U='all')
+    #jk_cov_dic['all'] = jk_cov_all
+
 if (0):
     clf(); 
     subplot(221);imshow(jk_cov_T, cmap=cmap); colorbar(); 
@@ -310,7 +316,9 @@ def get_plname():
         plname = '%s_withclusterksz' %(plname)
         titstr = '%s + cluster kSZ' %(titstr)
 
-    plname = plname.replace('plots//', 'plots/')
+    rsval_used = dataset_fname.split('_')[-1].replace('.npy', '')
+
+    plname = '%s_%s' %(plname.replace('plots//', 'plots/'), rsval_used)
     opfname = '%s.npy' %(plname.replace('/plots/', '/results_'))
     plname = '%s.png' %(plname)
     
@@ -334,6 +342,7 @@ for tqu in range(tqulen):
             data_vec = data_stack_dic[simcntr][tqu].flatten()
         if testing:colorarr = [cm.jet(int(d)) for d in np.linspace(0, 255, len(model_dic))]
         for modelcntr, model_keyname in enumerate( sorted( model_dic ) ):
+            if model_keyname[0]>4.0: continue
             if use_1d:
                 model_vec = np.mean(model_dic[model_keyname][tqu], axis = 0)
                 if testing: plot(model_vec, color = colorarr[modelcntr])
@@ -371,7 +380,7 @@ for tqu in range(tqulen):
     ylabel(r'Normalised $\mathcal{L}$', fontsize = 14)
     title(r'%s clusters (SNR = %.2f); $\Delta_{\rm T} = %s \mu{\rm K-arcmin}$; %s' %(total_clusters, combined_snr, noiseval, titstr), fontsize = 10)
 res_dic['param_dict'] = param_dict
-##np.save(opfname, res_dic)
+np.save(opfname, res_dic)
 ##savefig(plname)
 show();
 print(plname)

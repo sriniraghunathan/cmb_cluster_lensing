@@ -274,7 +274,7 @@ for simcntr in range( start, end ):
                 fg_map=np.asarray( [fg_map_T, fg_map_Q, fg_map_U] )
             else:
                 fg_map = np.zeros_like(noise_map)
-        
+
         if do_lensing:
             cmb_map_lensed=[]
             for tqu in range(tqulen):
@@ -389,7 +389,7 @@ for sim_type in sim_dic:
         nclustersorrandoms=len(sim_arr)
         if apply_wiener_filter:
             if pol:
-                cl_signal_arr=[cl[0], cl[1], cl[1]]
+                cl_signal_arr=[cl[0], cl[1]/2., cl[1]/2.]
                 cl_noise_arr=[nl_dic['T'], nl_dic['P'], nl_dic['P']]
             else:
                 cl_signal_arr=[cl[0]]
