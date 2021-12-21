@@ -78,7 +78,7 @@ else: #handle tsz
         cutouts_rotated_arr=data['clusters']['cutouts_rotated'][simcntr]
         grad_mag_arr=data['clusters']['grad_mag'][simcntr]
 
-        ###stack = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
+        stack = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
 
         #estimate and remove tSZ from rotated stack
         cutouts_rotated_arr_for_tsz_estimation = np.copy(cutouts_rotated_arr)
@@ -86,6 +86,41 @@ else: #handle tsz
         
         #fit tsz model
         tsz_fit_model = foregrounds.fit_fot_tsz(tsz_estimate[0], dx)
+
+        if (0):
+            tmp_stack_fname = '/Users/sraghunathan/Dropbox/for_kevin/results/20211108/cluster_stack.npy'
+            tmp_tszstack_fname = '/Users/sraghunathan/Dropbox/for_kevin/results/20211108/tsz_stack.npy'
+            tmp_bgstack_fname = '/Users/sraghunathan/Dropbox/for_kevin/results/20211108/background_stack.npy'
+            tmp_stack = np.load(tmp_stack_fname, allow_pickle = True)
+            tmp_tsz_stack = np.load(tmp_tszstack_fname, allow_pickle = True)
+            tmp_bgstack = np.load(tmp_bgstack_fname, allow_pickle = True)
+            dx = 0.5
+            tmp_tsz_fit_model = foregrounds.fit_fot_tsz(tmp_tsz_stack, dx)
+
+            ny, nx = tmp_tsz_stack.shape
+            x1, x2 = -nx*dx/2., nx*dx/2.
+
+            clf()
+            subplots_adjust(wspace = 0.1)
+            ax=subplot(221); imshow(tmp_stack, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); title(r'Cluster stack'); axhline(lw=0.5); axvline(lw=0.5); ylabel(r'ARCMINS')
+            setp(ax.get_xticklabels(which = 'both'), visible=False)
+            ax=subplot(222); imshow(tmp_tsz_stack, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); title(r'tSZ stack'); axhline(lw=0.5); axvline(lw=0.5); 
+            setp(ax.get_xticklabels(which = 'both'), visible=False)
+            setp(ax.get_yticklabels(which = 'both'), visible=False)
+            ax=subplot(223); imshow(tmp_tsz_fit_model, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); title(r'tSZ stack model'); axhline(lw=0.5); axvline(lw=0.5); 
+            xlabel(r'ARCMINS'); ylabel(r'ARCMINS')
+            ax=subplot(224); imshow(tmp_tsz_stack - tmp_tsz_fit_model, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); title(r'Model - tSZ stack'); axhline(lw=0.5); axvline(lw=0.5); 
+            xlabel(r'ARCMINS');
+            setp(ax.get_yticklabels(which = 'both'), visible=False) 
+            show(); #sys.exit()
+            clf()
+            imshow(tmp_stack - tmp_bgstack - tmp_tsz_fit_model, cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
+            title(r'Cluster stack - background - tSZ fit'); axhline(lw=0.5); axvline(lw=0.5); 
+            xlabel(r'ARCMINS'); ylabel(r'ARCMINS')
+            show()
+
+            print(stack.shape, tsz_stack.shape, tsz_fit_model.shape)
+            sys.exit()
 
         if (0):
             subplot(131); imshow(tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
@@ -101,7 +136,8 @@ else: #handle tsz
         data['clusters']['cutouts_rotated'][simcntr] = cutouts_rotated_arr
         stack_after_tsz_removal = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
 
-        if (0):
+
+        if (1):
             subplot(131); imshow(stack[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
             subplot(132); imshow(tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar();
             subplot(133); imshow(stack_after_tsz_removal[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); show(); sys.exit()
