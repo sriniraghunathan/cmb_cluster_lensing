@@ -303,7 +303,7 @@ for simcntr in range( start, end ):
         #add beam
         cmb_map = np.fft.ifft2( np.fft.fft2(cmb_map) * bl ).real
         fg_map = np.fft.ifft2( np.fft.fft2(fg_map) * bl ).real
-            
+        
         sim_map=cmb_map + noise_map + fg_map
 
         for tqu in range(tqulen):#mean subtraction for T(/Q/U)

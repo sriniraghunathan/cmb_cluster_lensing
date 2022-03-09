@@ -12,6 +12,7 @@ def get_cmb_cls(cls_file, pol=False):
     el, dl_tt, dl_ee, dl_bb, dl_te =np.loadtxt(cls_file, unpack=1)
     dl_all=np.asarray( [dl_tt, dl_ee, dl_bb, dl_te] )
     cl_all=dl_to_cl(el, dl_all)
+    cl_tt, cl_ee, cl_bb, cl_te = cl_all
     if not pol:
         cl=[cl_tt]    
     else:

@@ -137,7 +137,7 @@ else: #handle tsz
         stack_after_tsz_removal = tools.stack_rotated_tqu_cutouts(cutouts_rotated_arr, weights_for_cutouts = grad_mag_arr)
 
 
-        if (1):
+        if (0):
             subplot(131); imshow(stack[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); 
             subplot(132); imshow(tsz_estimate[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar();
             subplot(133); imshow(stack_after_tsz_removal[0], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); show(); sys.exit()
@@ -157,9 +157,10 @@ random_stack = random_stack_dic[0]
 
 #subtract background from data stack
 for keyname in data_stack_dic:
-    if (1):
+    if (0):
         tmp_stack = data_stack_dic[keyname]
         tmp_stack_bg_sub = data_stack_dic[keyname] - random_stack
+        #print(tmp_stack[0,0], random_stack[0,0]); sys.exit()
         sbpl=1
         for tqu in range(len(data_stack_dic[keyname])):
             subplot(tqulen, 3, sbpl); imshow(tmp_stack[tqu], cmap=cmap, extent = [x1, x2, x1, x2]); colorbar(); sbpl+=1
@@ -169,8 +170,7 @@ for keyname in data_stack_dic:
         show(); sys.exit()
     data_stack_dic[keyname] -= random_stack
     data_stack_dic[keyname][np.isnan(data_stack_dic[keyname])] = 0.
-    #print(data_stack_dic[keyname].shape)
-    if np.sum(data_stack_dic[keyname][1]) == 0.: tqulen = 1
+    if np.sum(data_stack_dic[keyname][0]) == 0.: tqulen = 1
 ##########################################
 ##########################################
 

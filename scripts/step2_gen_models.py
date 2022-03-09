@@ -271,11 +271,14 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
             for tqu in range(tqulen):#mean subtraction for T(/Q/U)
                 sim_map[tqu] -= np.mean(sim_map[tqu])
                 cmb_map[tqu] -= np.mean(cmb_map[tqu])
+            #print(keyname, i, cmb_map[0,0,0], noise_map[0,0,0], fg_map[0,0,0], sim_map[0,0,0], sim_map[0].mean(), cmb_map[0].mean())
+            #if i>3: break
 
             sim_arr.append( sim_map )
             cmb_sim_arr.append( cmb_map )
         sim_dic[sim_type]['sims'][simcntr]=np.asarray( sim_arr )
         sim_dic[sim_type]['cmb_sims'][simcntr]=np.asarray( cmb_sim_arr )
+    #sys.exit()
 
     #get gradient information for all cluster cutouts
     print('\t\tget gradient information for all cluster cutouts')
