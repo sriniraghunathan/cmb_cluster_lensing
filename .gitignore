@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*archive*
 
 .DS_Store
 
