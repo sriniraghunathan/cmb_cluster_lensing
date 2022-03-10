@@ -4,7 +4,7 @@
 ########################
 #load desired modules
 import numpy as np, sys, os, scipy as sc, argparse, glob
-sys_path_folder='/Users/sraghunathan/Research/SPTPol/analysis/git/cmb_cluster_lensing/python/'
+sys_path_folder='../python/'
 sys.path.append(sys_path_folder)
 
 import flatsky, tools, lensing, foregrounds, misc
