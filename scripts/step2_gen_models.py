@@ -293,7 +293,7 @@ for (cluster_mass, cluster_z) in zip(cluster_mass_arr, cluster_z_arr):
             nclustersorrandoms=len(sim_arr)
             if apply_wiener_filter:
                 if pol:
-                    cl_signal_arr=[cl[0], cl[1], cl[1]]
+                    cl_signal_arr=[cl[0], cl[1]/2., cl[1]/2.]
                     cl_noise_arr=[nl_dic['T'], nl_dic['P'], nl_dic['P']]
                 else:
                     cl_signal_arr=[cl[0]]
