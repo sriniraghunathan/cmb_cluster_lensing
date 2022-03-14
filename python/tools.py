@@ -51,8 +51,8 @@ def get_cl_fg(el=None, freq=150, pol=False, units='uk', pol_frac_cib = 0.02, pol
         el_fg, cl_dg_po=foregrounds.get_foreground_power_spt('DG-Po', freq1=150, freq2=None, units='uk', lmax=None)
         el_fg, cl_rg=foregrounds.get_foreground_power_spt('RG', freq1=150, freq2=None, units='uk', lmax=None)
         cl_dg=cl_dg_cl + cl_dg_po
-        cl_dg=cl_dg * pol_frac_cib
-        cl_rg=cl_rg * pol_frac_radio
+        cl_dg=cl_dg * pol_frac_cib**2.
+        cl_rg=cl_rg * pol_frac_radio**2.
         cl_fg_tmp=cl_dg + cl_rg
         cl_fg_pol=np.interp(el, el_fg_tmp, cl_fg_tmp)
         cl_fg_dic['P']=cl_fg_pol
