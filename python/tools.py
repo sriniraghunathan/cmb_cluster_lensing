@@ -40,16 +40,16 @@ def get_nl_dic(noiseval, el, pol=False):
 #################################################################################
 
 def get_cl_fg(el=None, freq=150, pol=False, units='uk', pol_frac_cib = 0.02, pol_frac_radio = 0.03, lmax=None):
-    el_fg_tmp, cl_fg_tmp=foregrounds.get_foreground_power_spt('all', freq1=150, freq2=None, units=units, lmax=lmax)
+    el_fg_tmp, cl_fg_tmp=foregrounds.get_foreground_power_spt('all', freq1=freq, freq2=None, units=units, lmax=lmax)
     if el is None:
         el=np.copy(el_fg_tmp)
     cl_fg_temp=np.interp(el, el_fg_tmp, cl_fg_tmp)
     cl_fg_dic={}
     cl_fg_dic['T']=cl_fg_temp
     if pol:
-        el_fg_tmp, cl_dg_cl=foregrounds.get_foreground_power_spt('DG-Cl', freq1=150, freq2=None, units='uk', lmax=None)
-        el_fg, cl_dg_po=foregrounds.get_foreground_power_spt('DG-Po', freq1=150, freq2=None, units='uk', lmax=None)
-        el_fg, cl_rg=foregrounds.get_foreground_power_spt('RG', freq1=150, freq2=None, units='uk', lmax=None)
+        el_fg_tmp, cl_dg_cl=foregrounds.get_foreground_power_spt('DG-Cl', freq1=freq, freq2=None, units='uk', lmax=None)
+        el_fg, cl_dg_po=foregrounds.get_foreground_power_spt('DG-Po', freq1=freq, freq2=None, units='uk', lmax=None)
+        el_fg, cl_rg=foregrounds.get_foreground_power_spt('RG', freq1=freq, freq2=None, units='uk', lmax=None)
         cl_dg=cl_dg_cl + cl_dg_po
         cl_dg=cl_dg * pol_frac_cib**2.
         cl_rg=cl_rg * pol_frac_radio**2.
