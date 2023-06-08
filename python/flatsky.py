@@ -288,7 +288,7 @@ def make_gaussian_realisation(mapparams, el, cl, cl2 = None, cl12 = None, cltwod
 
         #T and E generated. B will simply be zeroes.
         SIM_FIELD_3 = np.zeros( SIM_FIELD_2.shape )
-        if qu_or_eb == 'qu': #T, Q, U: convert E/B to Q/U.
+        if qu_or_eb == 'qu' and pol_fields: #T, Q, U: convert E/B to Q/U.
             SIM_FIELD_2, SIM_FIELD_3 = convert_eb_qu(SIM_FIELD_2, SIM_FIELD_3, mapparams, eb_to_qu = 1)
         else: #T, E, B: B will simply be zeroes
             pass
