@@ -3,6 +3,7 @@ import scipy as sc
 import scipy.ndimage as ndimage
 
 from pylab import *
+from astropy.cosmology import FlatLambdaCDM
 
 #################################################################################
 #################################################################################
@@ -347,6 +348,84 @@ def get_jk_covariance(cutouts, howmany_jk_samples, weights=None, T_or_Q_or_U='T'
 
     return jk_cov
 
+################################################################################################################
+################################################################################################################
+def perform_offsets_correction(mapparams, redshift, model, param_dict, richval, totalclus, fcen = 0.78, lncmis  = -1.13, D_a_sigma_c, constant_D_a_sigma_c = False):
+    """
+    20230608 - Module for offset correction in Fourier space.
+    Not fully tested yet.
+    """
+
+    """
+    fcen = 0.78 #page 14 of https://arxiv.org/pdf/1601.00621.pdf (Rykoff 2016)
+    """
+    model_fft = np.fft.fft2( model )
+
+    if D_a_sigma_c == None: #if not generated already. generate it now. (Make sure it does not screw up CMB realisations for model generation due to an additional random realisation.)
+
+        if not constant_D_a_sigma_c:
+
+            R_lambda = (richval/100.)**0.2 / self.inidic['h']
+
+            offset_scatter = np.exp(lncmis) * R_lambda
+            if offset_scatter > 0.:
+                Roff_dist = np.random.rayleigh(offset_scatter, totalclus) ## * theta
+            else:
+                Roff_dist = np.zeros(totalclus) ## * theta
+
+            y, x = np.histogram(Roff_dist, bins = 100)
+
+            #20180509 - modified to pick the mean value from several samples. 
+            ###D_a_sigma_c = self.fn_random_sampler(x[:-1], y, howmanysamples = 1, burn_in = 0)[0]
+            D_a_sigma_c_arr = tools.random_sampler(x[:-1], y, howmanysamples = len(Roff_dist), burn_in = 0)##[0]
+            D_a_sigma_c = np.mean(D_a_sigma_c_arr)
+
+            ###D_a_sigma_c = offset_scatter #20190510 - so the likelihood is not noisy: 20190612 removing this.
+
+            '''
+            plot(x[1:], y)
+            hist(D_a_sigma_c_arr, bins = 100)
+            axvline(D_a_sigma_c, color = 'lime');show()
+            '''
+
+            '''
+            D_a_sigma_c = Roff_dist[np.random.randint(len(Roff_dist))]
+            '''
+        else:##except:
+            D_a_sigma_c = 0.42/param_dict['h'] #0.42h-1 Mpc from https://arxiv.org/1010.0744 below Eq.(34) or from https://arxiv.org/1707.09369
+    
+    ##print D_a_sigma_c, fcen, lncmis, redshift, richval
+
+    fmis = 1 - fcen
+
+    '''
+    ombh2 = 0.022
+    omb0 = ombh2/param_dict['h']**2.
+    '''
+    cosmo = FlatLambdaCDM(H0 = param_dict['h']*100., Om0 = param_dict['omega_m'], Ob0 = param_dict['omega_b'])
+
+    D_a = (cosmo.comoving_distance(redshift)/(1.+redshift) ).value
+
+    lx, ly = self.get_lxly(mapparams)
+    ell = np.sqrt( lx ** 2. + ly ** 2. )
+    sigma_c = D_a_sigma_c/D_a
+    ##from IPython import embed; embed()
+    how_much_smearing = ( fcen + fmis * np.exp( -0.5 * sigma_c**2. * ell**2. ) )
+    model_miscentred_fft = how_much_smearing * model_fft
+    model_miscentred = np.fft.ifft2( model_miscentred_fft ).real
+
+    """
+    subplot(131);imshow(MODEL, vmin = -0.02, vmax = 0.2);colorbar()
+    subplot(132);imshow(MODEL_MISCENTERED, vmin = -0.02, vmax = 0.2);colorbar()
+    subplot(133);imshow(MODEL - MODEL_MISCENTERED);colorbar()
+    show()
+    """
+
+    model = np.copy( model_miscentred )
+
+    ##imshow(MODEL, interpolation = 'bicubic', cmap = cmap_planck);axhline(30.); axvline(30.);colorbar();show();sys.exit()
+
+    return model
 ################################################################################################################
 ################################################################################################################
 def downsample_map(data, N=2): #from N.Whitehorn
